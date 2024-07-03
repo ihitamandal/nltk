@@ -253,6 +253,18 @@ class CorpusReader:
         :type: PathPointer""",
     )
 
+    def _convert_encoding_list_to_dict(self, fileids, encoding_list):
+        encoding_dict = {}
+        compiled_patterns = [
+            (re.compile(pattern), enc) for pattern, enc in encoding_list
+        ]
+        for fileid in fileids:
+            for pattern, enc in compiled_patterns:
+                if pattern.match(fileid):
+                    encoding_dict[fileid] = enc
+                    break
+        return encoding_dict
+
 
 ######################################################################
 # { Corpora containing categorized items
