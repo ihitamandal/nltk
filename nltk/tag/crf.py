@@ -12,6 +12,8 @@ A module for POS tagging using CRFSuite
 import re
 import unicodedata
 
+import pycrfsuite
+
 from nltk.tag.api import TaggerI
 
 try:
@@ -151,22 +153,21 @@ class CRFTagger(TaggerI):
         :return: list of tagged sentences.
         :rtype: list(list(tuple(str,str)))
         """
-        if self._model_file == "":
-            raise Exception(
-                " No model file is found !! Please use train or set_model_file function"
+        if not self._model_file:
+            raise RuntimeError(
+                "No model file is found! Please use train or set_model_file function"
             )
 
-        # We need the list of sentences instead of the list generator for matching the input and output
+        # Precompute features for all sentences
         result = []
         for tokens in sents:
             features = [self._feature_func(tokens, i) for i in range(len(tokens))]
             labels = self._tagger.tag(features)
 
             if len(labels) != len(tokens):
-                raise Exception(" Predicted Length Not Matched, Expect Errors !")
+                raise ValueError("Predicted Length Not Matched, Expect Errors!")
 
-            tagged_sent = list(zip(tokens, labels))
-            result.append(tagged_sent)
+            result.append(list(zip(tokens, labels)))
 
         return result
 
