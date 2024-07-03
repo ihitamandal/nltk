@@ -239,8 +239,7 @@ class CorpusReader:
         """
         if isinstance(self._encoding, dict):
             return self._encoding.get(file)
-        else:
-            return self._encoding
+        return self._encoding
 
     def _get_root(self):
         return self._root
