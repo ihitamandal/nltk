@@ -116,7 +116,8 @@ class CCGLeafEdge(EdgeI):
         return self._token.categ()
 
     def span(self):
-        return (self._pos, self._pos + 1)
+        pos = self._pos
+        return (pos, pos + 1)
 
     def start(self):
         return self._pos
