@@ -161,8 +161,9 @@ class _WordNetObject:
     def member_meronyms(self):
         return self._related("%m")
 
-    def substance_meronyms(self):
-        return self._related("%s")
+    def substance_meronyms(self) -> str:
+        """Retrieve substance meronyms related to the object."""
+        return self._related(f"{self._name}")
 
     def part_meronyms(self):
         return self._related("%p")
@@ -214,6 +215,10 @@ class _WordNetObject:
 
     def __lt__(self, other):
         return self._name < other._name
+
+    def _related(self, pattern: str) -> str:
+        """Simulated placeholder for the actual _related method."""
+        return pattern
 
 
 class Lemma(_WordNetObject):
