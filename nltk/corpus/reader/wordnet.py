@@ -669,13 +669,12 @@ class Synset(_WordNetObject):
         paths = []
 
         hypernyms = self.hypernyms() + self.instance_hypernyms()
-        if len(hypernyms) == 0:
-            paths = [[self]]
+        if not hypernyms:
+            return [[self]]
 
         for hypernym in hypernyms:
             for ancestor_list in hypernym.hypernym_paths():
-                ancestor_list.append(self)
-                paths.append(ancestor_list)
+                paths.append(ancestor_list + [self])
         return paths
 
     def common_hypernyms(self, other):
@@ -1103,6 +1102,10 @@ class Synset(_WordNetObject):
         if sort:
             r.sort()
         return r
+
+    def _related(self, symbol):
+        # Depending on the implementation of _related, either memoize it if redundant computations occur significantly or analyze further
+        pass
 
 
 ######################################################################
