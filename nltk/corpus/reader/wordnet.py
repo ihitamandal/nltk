@@ -788,16 +788,20 @@ class Synset(_WordNetObject):
 
         queue = deque([(self, 0)])
         path = {}
+        visited = set()
 
         while queue:
             s, depth = queue.popleft()
-            if s in path:
+            if s in visited:
                 continue
+            visited.add(s)
             path[s] = depth
 
-            depth += 1
-            queue.extend((hyp, depth) for hyp in s._hypernyms())
-            queue.extend((hyp, depth) for hyp in s._instance_hypernyms())
+            next_depth = depth + 1
+            hypernyms = s._hypernyms() + s._instance_hypernyms()
+            for hyp in hypernyms:
+                if hyp not in visited:
+                    queue.append((hyp, next_depth))
 
         if simulate_root:
             fake_synset = Synset(None)
