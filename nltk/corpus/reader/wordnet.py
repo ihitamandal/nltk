@@ -1104,6 +1104,16 @@ class Synset(_WordNetObject):
             r.sort()
         return r
 
+    def get_pointers(self):
+        if self._pointers is None:
+            self._pointers = defaultdict(set)
+        return self._pointers
+
+    def get_lemma_pointers(self):
+        if self._lemma_pointers is None:
+            self._lemma_pointers = defaultdict(list)
+        return self._lemma_pointers
+
 
 ######################################################################
 # WordNet Corpus Reader
