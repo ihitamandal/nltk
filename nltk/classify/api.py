@@ -70,7 +70,7 @@ class ClassifierI:
 
     def classify_many(self, featuresets):
         """
-        Apply ``self.classify()`` to each element of ``featuresets``.  I.e.:
+        Apply ``self.classify()`` to each element of ``featuresets``. I.e.:
 
             return [self.classify(fs) for fs in featuresets]
 
