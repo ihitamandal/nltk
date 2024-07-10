@@ -497,9 +497,7 @@ def unary_concept(label, subj, records):
     :return: ``Concept`` of arity 1
     :rtype: Concept
     """
-    c = Concept(label, arity=1, extension=set())
-    for record in records:
-        c.augment(record[subj])
+    c = Concept(label, arity=1, extension={record[subj] for record in records})
     return c
 
 
