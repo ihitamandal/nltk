@@ -324,14 +324,13 @@ class Lemma(_WordNetObject):
         return "%s('%s.%s')" % tup
 
     def _related(self, relation_symbol):
-        get_synset = self._wordnet_corpus_reader.synset_from_pos_and_offset
-        if (self._name, relation_symbol) not in self._synset._lemma_pointers:
+        lemma_pointers = self._synset._lemma_pointers
+        if not (self._name, relation_symbol) in lemma_pointers:
             return []
+        get_synset = self._wordnet_corpus_reader.synset_from_pos_and_offset
         return [
             get_synset(pos, offset)._lemmas[lemma_index]
-            for pos, offset, lemma_index in self._synset._lemma_pointers[
-                self._name, relation_symbol
-            ]
+            for pos, offset, lemma_index in lemma_pointers[self._name, relation_symbol]
         ]
 
     def count(self):
