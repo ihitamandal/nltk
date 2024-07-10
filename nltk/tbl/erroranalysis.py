@@ -26,12 +26,25 @@ def error_list(train_sents, test_sents):
         "right context",
     )
     errors = [hdr]
+
+    # Precompute join strings to avoid repeatable operations in loop
+    sep = " | "
+    dash_left = "-" * 26
+    dash_center = "-" * 24
+    dash_right = "-" * 26
+
     for train_sent, test_sent in zip(train_sents, test_sents):
+        num_words = len(train_sent)
         for wordnum, (word, train_pos) in enumerate(train_sent):
             test_pos = test_sent[wordnum][1]
             if train_pos != test_pos:
-                left = " ".join("%s/%s" % w for w in train_sent[:wordnum])
-                right = " ".join("%s/%s" % w for w in train_sent[wordnum + 1 :])
+                left = " ".join(
+                    f"{w[0]}/{w[1]}" for w in train_sent[max(0, wordnum - 5) : wordnum]
+                )
+                right = " ".join(
+                    f"{w[0]}/{w[1]}"
+                    for w in train_sent[wordnum + 1 : min(num_words, wordnum + 6)]
+                )
                 mid = f"{word}/{test_pos}->{train_pos}"
                 errors.append(f"{left[-25:]:>25} | {mid.center(22)} | {right[:25]}")
 
