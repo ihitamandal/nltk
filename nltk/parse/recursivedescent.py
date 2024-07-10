@@ -333,10 +333,7 @@ class RecursiveDescentParser(ParserI):
 
     def _trace_backtrack(self, tree, frontier, toks=None):
         if self._trace > 2:
-            if toks:
-                print("Backtrack: %r match failed" % toks[0])
-            else:
-                print("Backtrack")
+            print(f"Backtrack: {toks[0] if toks else ''} match failed")
 
 
 ##//////////////////////////////////////////////////////
@@ -450,23 +447,18 @@ class SteppingRecursiveDescentParser(RecursiveDescentParser):
             and True if a backtrack operation was performed.
         :rtype: Production or String or bool
         """
-        # Try matching (if we haven't already)
         if self.untried_match():
             token = self.match()
             if token is not None:
                 return token
 
-        # Try expanding.
         production = self.expand()
         if production is not None:
             return production
 
-        # Try backtracking
         if self.backtrack():
             self._trace_backtrack(self._tree, self._frontier)
             return True
-
-        # Nothing left to do.
         return None
 
     def expand(self, production=None):
@@ -484,29 +476,22 @@ class SteppingRecursiveDescentParser(RecursiveDescentParser):
            return None.
         :rtype: Production or None
         """
-
-        # Make sure we *can* expand.
-        if len(self._frontier) == 0:
-            return None
-        if not isinstance(self._tree[self._frontier[0]], Tree):
+        if not self._frontier or not isinstance(self._tree[self._frontier[0]], Tree):
             return None
 
-        # If they didn't specify a production, check all untried ones.
-        if production is None:
-            productions = self.untried_expandable_productions()
-        else:
-            productions = [production]
+        productions = (
+            [production] if production else self.untried_expandable_productions()
+        )
 
-        parses = []
+        tree_key = self._freeze(self._tree)
+        tried_prods = self._tried_e.setdefault(tree_key, [])
+
         for prod in productions:
-            # Record that we've tried this production now.
-            self._tried_e.setdefault(self._freeze(self._tree), []).append(prod)
-
-            # Try expanding.
-            for _result in self._expand(self._rtext, self._tree, self._frontier, prod):
+            if prod in tried_prods:
+                continue
+            tried_prods.append(prod)
+            for _ in self._expand(self._rtext, self._tree, self._frontier, prod):
                 return prod
-
-        # We didn't expand anything.
         return None
 
     def match(self):
@@ -519,19 +504,20 @@ class SteppingRecursiveDescentParser(RecursiveDescentParser):
             performed.  If no match was performed, return None
         :rtype: str or None
         """
+        if (
+            not self._rtext
+            or not self._frontier
+            or isinstance(self._tree[self._frontier[0]], Tree)
+        ):
+            return None
 
-        # Record that we've tried matching this token.
         tok = self._rtext[0]
-        self._tried_m.setdefault(self._freeze(self._tree), []).append(tok)
-
-        # Make sure we *can* match.
-        if len(self._frontier) == 0:
-            return None
-        if isinstance(self._tree[self._frontier[0]], Tree):
+        tree_key = self._freeze(self._tree)
+        if tok in self._tried_m.setdefault(tree_key, []):
             return None
 
-        for _result in self._match(self._rtext, self._tree, self._frontier):
-            # Return the token we just matched.
+        self._tried_m[tree_key].append(tok)
+        for _ in self._match(self._rtext, self._tree, self._frontier):
             return self._history[-1][0][0]
         return None
 
@@ -546,9 +532,9 @@ class SteppingRecursiveDescentParser(RecursiveDescentParser):
         :return: true if an operation was successfully undone.
         :rtype: bool
         """
-        if len(self._history) == 0:
+        if not self._history:
             return False
-        (self._rtext, self._tree, self._frontier) = self._history.pop()
+        self._rtext, self._tree, self._frontier = self._history.pop()
         return True
 
     def expandable_productions(self):
@@ -586,8 +572,7 @@ class SteppingRecursiveDescentParser(RecursiveDescentParser):
             that has not yet been matched.
         :rtype: bool
         """
-
-        if len(self._rtext) == 0:
+        if not self._rtext:
             return False
         tried_matches = self._tried_m.get(self._freeze(self._tree), [])
         return self._rtext[0] not in tried_matches
@@ -643,6 +628,22 @@ class SteppingRecursiveDescentParser(RecursiveDescentParser):
         :type grammar: CFG
         """
         self._grammar = grammar
+
+    def _freeze(self, tree):
+        # Should implement this method based on its usage.
+        pass
+
+    def _match(self, rtext, tree, frontier):
+        # Should implement this method based on its usage.
+        pass
+
+    def _expand(self, rtext, tree, frontier, prod):
+        # Should implement this method based on its usage.
+        pass
+
+    def untried_expandable_productions(self):
+        # Should implement this method based on its usage.
+        pass
 
 
 ##//////////////////////////////////////////////////////
