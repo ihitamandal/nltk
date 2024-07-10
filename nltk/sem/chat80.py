@@ -327,15 +327,16 @@ class Concept:
                             g[x].append(y)
         return g
 
-    def _make_pairs(self, g):
+    def _make_pairs(self, g: dict[object, list[object]]) -> set[tuple[object, object]]:
+        """Convert an adjacency linked list back into a set of pairs.
+
+        Parameters:
+        g (dict[object, list[object]]): The adjacency linked list.
+
+        Returns:
+        set[tuple[object, object]]: A set of pairs representing the adjacency list.
         """
-        Convert an adjacency linked list back into a set of pairs.
-        """
-        pairs = []
-        for node in g:
-            for adjacent in g[node]:
-                pairs.append((node, adjacent))
-        return set(pairs)
+        return {(node, adjacent) for node in g for adjacent in g[node]}
 
     def close(self):
         """
