@@ -116,10 +116,10 @@ class MultiClassifierI:
         :return: the most appropriate set of labels for the given featureset.
         :rtype: set(label)
         """
-        if overridden(self.classify_many):
-            return self.classify_many([featureset])[0]
-        else:
-            raise NotImplementedError()
+        classify_many_method = getattr(self, "classify_many", None)
+        if classify_many_method and callable(classify_many_method):
+            return classify_many_method([featureset])[0]
+        raise NotImplementedError()
 
     def prob_classify(self, featureset):
         """
