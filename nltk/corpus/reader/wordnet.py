@@ -791,13 +791,11 @@ class Synset(_WordNetObject):
 
         while queue:
             s, depth = queue.popleft()
-            if s in path:
-                continue
-            path[s] = depth
-
-            depth += 1
-            queue.extend((hyp, depth) for hyp in s._hypernyms())
-            queue.extend((hyp, depth) for hyp in s._instance_hypernyms())
+            if s not in path:
+                path[s] = depth
+                depth += 1
+                hypernyms = list(set(s._hypernyms()) | set(s._instance_hypernyms()))
+                queue.extend((hyp, depth) for hyp in hypernyms if hyp not in path)
 
         if simulate_root:
             fake_synset = Synset(None)
@@ -820,21 +818,17 @@ class Synset(_WordNetObject):
         :return: The number of edges in the shortest path connecting the two
             nodes, or None if no path exists.
         """
-
         if self == other:
             return 0
 
         dist_dict1 = self._shortest_hypernym_paths(simulate_root)
         dist_dict2 = other._shortest_hypernym_paths(simulate_root)
 
-        # For each ancestor synset common to both subject synsets, find the
-        # connecting path length. Return the shortest of these.
-
         inf = float("inf")
         path_distance = inf
-        for synset, d1 in dist_dict1.items():
-            d2 = dist_dict2.get(synset, inf)
-            path_distance = min(path_distance, d1 + d2)
+        common_ancestors = dist_dict1.keys() & dist_dict2.keys()
+        for synset in common_ancestors:
+            path_distance = min(path_distance, dist_dict1[synset] + dist_dict2[synset])
 
         return None if math.isinf(path_distance) else path_distance
 
