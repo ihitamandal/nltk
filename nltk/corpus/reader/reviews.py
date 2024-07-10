@@ -116,7 +116,7 @@ class Review:
         """
         Return all tokenized sentences in the review.
 
-        :return: all sentences of the review as lists of tokens.
+        :return: All sentences of the review as lists of tokens.
         :rtype: list(list(str))
         """
         return [review_line.sent for review_line in self.review_lines]
