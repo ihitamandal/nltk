@@ -517,7 +517,6 @@ def binary_concept(label, closures, subj, obj, records):
     binary concept will have label ``'B_of'``, and its extension will
     be a set of pairs such as ``('a', 'b')``.
 
-
     :param label: the base part of the preferred label for the concept
     :type label: str
     :param closures: closure properties for the extension of the concept
@@ -531,12 +530,10 @@ def binary_concept(label, closures, subj, obj, records):
     :return: ``Concept`` of arity 2
     :rtype: Concept
     """
-    if not label == "border" and not label == "contain":
-        label = label + "_of"
-    c = Concept(label, arity=2, closures=closures, extension=set())
-    for record in records:
-        c.augment((record[subj], record[obj]))
-    # close the concept's extension according to the properties in closures
+    if label not in ("border", "contain"):
+        label += "_of"
+    c = Concept(label, arity=2, closures=closures)
+    c._extension = {(record[subj], record[obj]) for record in records}
     c.close()
     return c
 
