@@ -296,10 +296,11 @@ class Concept:
         :param data: a new semantic value
         :type data: string or pair of strings
         :rtype: set
-
         """
-        self._extension.add(data)
-        self.extension = sorted(list(self._extension))
+        if data not in self._extension:
+            self._extension.add(data)
+            self.extension.append(data)
+            self.extension.sort()
         return self._extension
 
     def _make_graph(self, s):
