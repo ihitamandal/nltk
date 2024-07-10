@@ -308,7 +308,7 @@ class Clause(list):
         return False
 
     def free(self):
-        return reduce(operator.or_, ((atom.free() | atom.constants()) for atom in self))
+        return reduce(operator.or_, (atom.free() | atom.constants() for atom in self))
 
     def replace(self, variable, expression):
         """
@@ -335,6 +335,12 @@ class Clause(list):
 
     def __repr__(self):
         return "%s" % self
+
+    def __getitem__(self, index):
+        # Using __getitem__ method directly instead of __getslice__ which is deprecated
+        if isinstance(index, slice):
+            return Clause(super().__getitem__(index))
+        return super().__getitem__(index)
 
 
 def _iterate_first(first, second, bindings, used, skipped, finalize_method, debug):
