@@ -275,11 +275,11 @@ class ReviewsCorpusReader(CorpusReader):
 
     def _read_features(self, stream):
         features = []
-        for i in range(20):
+        for _ in range(20):
             line = stream.readline()
             if not line:
-                return features
-            features.extend(re.findall(FEATURES, line))
+                break  # Using break as features will be returned anyway at the end
+            features.extend(FEATURES.findall(line))  # Calling findall once
         return features
 
     def _read_review_block(self, stream):
