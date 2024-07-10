@@ -136,12 +136,10 @@ def add_access_token(creds_file=None):
 
 def guess_path(pth):
     """
-    If the path is not absolute, guess that it is a subdirectory of the
-    user's home directory.
+    If the path is not absolute, guess that it is a subdirectory
+    of the user's home directory.
 
-    :param str pth: The pathname of the directory where files of tweets should be written
+    :param str pth: The pathname of the directory where files
+    of tweets should be written
     """
-    if os.path.isabs(pth):
-        return pth
-    else:
-        return os.path.expanduser(os.path.join("~", pth))
+    return pth if os.path.isabs(pth) else os.path.expanduser(f"~/{pth}")
