@@ -564,29 +564,35 @@ class BinaryMaxentFeatureEncoding(MaxentFeatureEncodingI):
             self._length += len(fnames)
 
     def encode(self, featureset, label):
-        # Inherit docs.
+        # Initialize encoding list
         encoding = []
 
-        # Convert input-features to joint-features:
+        # Convert input-features to joint-features
+        mapping_get = self._mapping.get
+        labels = self._labels
+        append_encoding = encoding.append
+        unseen = self._unseen
+        alwayson = self._alwayson
+
         for fname, fval in featureset.items():
-            # Known feature name & value:
-            if (fname, fval, label) in self._mapping:
-                encoding.append((self._mapping[fname, fval, label], 1))
-
-            # Otherwise, we might want to fire an "unseen-value feature".
-            elif self._unseen:
-                # Have we seen this fname/fval combination with any label?
-                for label2 in self._labels:
-                    if (fname, fval, label2) in self._mapping:
-                        break  # we've seen this fname/fval combo
-                # We haven't -- fire the unseen-value feature
+            key = (fname, fval, label)
+            fid = mapping_get(key)
+            if fid is not None:
+                append_encoding((fid, 1))
+            elif unseen:
+                for label2 in labels:
+                    if mapping_get((fname, fval, label2)) is not None:
+                        break
                 else:
-                    if fname in self._unseen:
-                        encoding.append((self._unseen[fname], 1))
+                    fid_unseen = unseen.get(fname)
+                    if fid_unseen is not None:
+                        append_encoding((fid_unseen, 1))
 
-        # Add always-on features:
-        if self._alwayson and label in self._alwayson:
-            encoding.append((self._alwayson[label], 1))
+        # Add always-on features
+        if alwayson:
+            fid_alwayson = alwayson.get(label)
+            if fid_alwayson is not None:
+                append_encoding((fid_alwayson, 1))
 
         return encoding
 
