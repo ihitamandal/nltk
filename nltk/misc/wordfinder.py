@@ -10,8 +10,9 @@
 
 import random
 
+from nltk.corpus import words
 
-# reverse a word with probability 0.5
+
 def revword(word):
     if random.randint(1, 2) == 1:
         return word[::-1]
@@ -28,24 +29,17 @@ def step(word, x, xf, y, yf, grid):
     return True
 
 
-# try to insert word at position x,y, in direction dir
 def check(word, dir, x, y, grid, rows, cols):
-    if dir == 1:
-        if x - len(word) < 0 or y - len(word) < 0:
-            return False
+    length = len(word)
+    if dir == 1 and (x - length >= 0 and y - length >= 0):
         return step(word, x, lambda i: x - i, y, lambda i: y - i, grid)
-    elif dir == 2:
-        if x - len(word) < 0:
-            return False
+    elif dir == 2 and (x - length >= 0):
         return step(word, x, lambda i: x - i, y, lambda i: y, grid)
-    elif dir == 3:
-        if x - len(word) < 0 or y + (len(word) - 1) >= cols:
-            return False
+    elif dir == 3 and (x - length >= 0 and y + length <= cols):
         return step(word, x, lambda i: x - i, y, lambda i: y + i, grid)
-    elif dir == 4:
-        if y - len(word) < 0:
-            return False
+    elif dir == 4 and (y - length >= 0):
         return step(word, x, lambda i: x, y, lambda i: y - i, grid)
+    return False
 
 
 def wordfinder(words, rows=20, cols=20, attempts=50, alph="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
@@ -69,27 +63,21 @@ def wordfinder(words, rows=20, cols=20, attempts=50, alph="ABCDEFGHIJKLMNOPQRSTU
     :type alph: list
     :rtype: tuple
     """
-
-    # place longer words first
     words = sorted(words, key=len, reverse=True)
+    grid = [[""] * cols for _ in range(rows)]
+    used = []
 
-    grid = []  # the letter grid
-    used = []  # the words we used
-
-    # initialize the grid
-    for i in range(rows):
-        grid.append([""] * cols)
-
-    # try to place each word
     for word in words:
-        word = word.strip().upper()  # normalize
-        save = word  # keep a record of the word
+        word = word.strip().upper()
+        save = word
         word = revword(word)
+        length = len(word)
+
         for attempt in range(attempts):
-            r = random.randint(0, len(word))
+            r = random.randrange(length + 1)
             dir = random.choice([1, 2, 3, 4])
-            x = random.randint(0, rows)
-            y = random.randint(0, cols)
+            x, y = random.randrange(rows + 1), random.randrange(cols + 1)
+
             if dir == 1:
                 x += r
                 y += r
@@ -100,13 +88,15 @@ def wordfinder(words, rows=20, cols=20, attempts=50, alph="ABCDEFGHIJKLMNOPQRSTU
                 y -= r
             elif dir == 4:
                 y += r
-            if 0 <= x < rows and 0 <= y < cols:
-                if check(word, dir, x, y, grid, rows, cols):
-                    #                   used.append((save, dir, x, y, word))
-                    used.append(save)
-                    break
 
-    # Fill up the remaining spaces
+            if (
+                0 <= x < rows
+                and 0 <= y < cols
+                and check(word, dir, x, y, grid, rows, cols)
+            ):
+                used.append(save)
+                break
+
     for i in range(rows):
         for j in range(cols):
             if grid[i][j] == "":
@@ -133,6 +123,16 @@ def word_finder():
 
     for i in range(len(used)):
         print("%d:" % (i + 1), used[i])
+
+
+def step(word, x, x_func, y, y_func, grid):
+    length = len(word)
+    for i in range(length):
+        if grid[x_func(i)][y_func(i)] not in ("", word[i]):
+            return False
+    for i in range(length):
+        grid[x_func(i)][y_func(i)] = word[i]
+    return True
 
 
 if __name__ == "__main__":
