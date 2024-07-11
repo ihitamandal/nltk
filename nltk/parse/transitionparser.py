@@ -64,13 +64,8 @@ class Configuration:
         Check whether a feature is informative
         The flag control whether "_" is informative or not
         """
-        if feat is None:
+        if feat is None or feat == "" or (flag is False and feat == "_"):
             return False
-        if feat == "":
-            return False
-        if flag is False:
-            if feat == "_":
-                return False
         return True
 
     def extract_features(self):
@@ -81,98 +76,92 @@ class Configuration:
         :return: list(str)
         """
         result = []
-        # Todo : can come up with more complicated features set for better
-        # performance.
-        if len(self.stack) > 0:
-            # Stack 0
-            stack_idx0 = self.stack[len(self.stack) - 1]
-            token = self._tokens[stack_idx0]
-            if self._check_informative(token["word"], True):
-                result.append("STK_0_FORM_" + token["word"])
-            if "lemma" in token and self._check_informative(token["lemma"]):
-                result.append("STK_0_LEMMA_" + token["lemma"])
+        if self.stack:
+            result.extend(self._extract_stack_features())
+        if self.buffer:
+            result.extend(self._extract_buffer_features())
+        return result
+
+    def _extract_stack_features(self):
+        result = []
+        stack_idx0 = self.stack[-1]
+        token = self._tokens[stack_idx0]
+        result.extend(self._get_token_features(token, "STK_0"))
+
+        if len(self.stack) > 1:
+            stack_idx1 = self.stack[-2]
+            token = self._tokens[stack_idx1]
             if self._check_informative(token["tag"]):
-                result.append("STK_0_POS_" + token["tag"])
-            if "feats" in token and self._check_informative(token["feats"]):
-                feats = token["feats"].split("|")
-                for feat in feats:
-                    result.append("STK_0_FEATS_" + feat)
-            # Stack 1
-            if len(self.stack) > 1:
-                stack_idx1 = self.stack[len(self.stack) - 2]
-                token = self._tokens[stack_idx1]
-                if self._check_informative(token["tag"]):
-                    result.append("STK_1_POS_" + token["tag"])
+                result.append("STK_1_POS_" + token["tag"])
 
-            # Left most, right most dependency of stack[0]
-            left_most = 1000000
-            right_most = -1
-            dep_left_most = ""
-            dep_right_most = ""
-            for wi, r, wj in self.arcs:
-                if wi == stack_idx0:
-                    if (wj > wi) and (wj > right_most):
-                        right_most = wj
-                        dep_right_most = r
-                    if (wj < wi) and (wj < left_most):
-                        left_most = wj
-                        dep_left_most = r
-            if self._check_informative(dep_left_most):
-                result.append("STK_0_LDEP_" + dep_left_most)
-            if self._check_informative(dep_right_most):
-                result.append("STK_0_RDEP_" + dep_right_most)
+        left_most, right_most = 1000000, -1
+        dep_left_most, dep_right_most = "", ""
+        for wi, r, wj in self.arcs:
+            if wi == stack_idx0:
+                if (wj > wi) and (wj > right_most):
+                    right_most = wj
+                    dep_right_most = r
+                if (wj < wi) and (wj < left_most):
+                    left_most = wj
+                    dep_left_most = r
+        if self._check_informative(dep_left_most):
+            result.append("STK_0_LDEP_" + dep_left_most)
+        if self._check_informative(dep_right_most):
+            result.append("STK_0_RDEP_" + dep_right_most)
+        return result
 
-        # Check Buffered 0
-        if len(self.buffer) > 0:
-            # Buffer 0
-            buffer_idx0 = self.buffer[0]
-            token = self._tokens[buffer_idx0]
+    def _extract_buffer_features(self):
+        result = []
+        buffer_idx0 = self.buffer[0]
+        token = self._tokens[buffer_idx0]
+        result.extend(self._get_token_features(token, "BUF_0"))
+
+        if len(self.buffer) > 1:
+            buffer_idx1 = self.buffer[1]
+            token = self._tokens[buffer_idx1]
             if self._check_informative(token["word"], True):
-                result.append("BUF_0_FORM_" + token["word"])
-            if "lemma" in token and self._check_informative(token["lemma"]):
-                result.append("BUF_0_LEMMA_" + token["lemma"])
+                result.append("BUF_1_FORM_" + token["word"])
             if self._check_informative(token["tag"]):
-                result.append("BUF_0_POS_" + token["tag"])
-            if "feats" in token and self._check_informative(token["feats"]):
-                feats = token["feats"].split("|")
-                for feat in feats:
-                    result.append("BUF_0_FEATS_" + feat)
-            # Buffer 1
-            if len(self.buffer) > 1:
-                buffer_idx1 = self.buffer[1]
-                token = self._tokens[buffer_idx1]
-                if self._check_informative(token["word"], True):
-                    result.append("BUF_1_FORM_" + token["word"])
-                if self._check_informative(token["tag"]):
-                    result.append("BUF_1_POS_" + token["tag"])
-            if len(self.buffer) > 2:
-                buffer_idx2 = self.buffer[2]
-                token = self._tokens[buffer_idx2]
-                if self._check_informative(token["tag"]):
-                    result.append("BUF_2_POS_" + token["tag"])
-            if len(self.buffer) > 3:
-                buffer_idx3 = self.buffer[3]
-                token = self._tokens[buffer_idx3]
-                if self._check_informative(token["tag"]):
-                    result.append("BUF_3_POS_" + token["tag"])
-                    # Left most, right most dependency of stack[0]
-            left_most = 1000000
-            right_most = -1
-            dep_left_most = ""
-            dep_right_most = ""
-            for wi, r, wj in self.arcs:
-                if wi == buffer_idx0:
-                    if (wj > wi) and (wj > right_most):
-                        right_most = wj
-                        dep_right_most = r
-                    if (wj < wi) and (wj < left_most):
-                        left_most = wj
-                        dep_left_most = r
-            if self._check_informative(dep_left_most):
-                result.append("BUF_0_LDEP_" + dep_left_most)
-            if self._check_informative(dep_right_most):
-                result.append("BUF_0_RDEP_" + dep_right_most)
+                result.append("BUF_1_POS_" + token["tag"])
+        if len(self.buffer) > 2:
+            buffer_idx2 = self.buffer[2]
+            token = self._tokens[buffer_idx2]
+            if self._check_informative(token["tag"]):
+                result.append("BUF_2_POS_" + token["tag"])
+        if len(self.buffer) > 3:
+            buffer_idx3 = self.buffer[3]
+            token = self._tokens[buffer_idx3]
+            if self._check_informative(token["tag"]):
+                result.append("BUF_3_POS_" + token["tag"])
 
+        left_most, right_most = 1000000, -1
+        dep_left_most, dep_right_most = "", ""
+        for wi, r, wj in self.arcs:
+            if wi == buffer_idx0:
+                if (wj > wi) and (wj > right_most):
+                    right_most = wj
+                    dep_right_most = r
+                if (wj < wi) and (wj < left_most):
+                    left_most = wj
+                    dep_left_most = r
+        if self._check_informative(dep_left_most):
+            result.append("BUF_0_LDEP_" + dep_left_most)
+        if self._check_informative(dep_right_most):
+            result.append("BUF_0_RDEP_" + dep_right_most)
+        return result
+
+    def _get_token_features(self, token, prefix):
+        result = []
+        if self._check_informative(token["word"], True):
+            result.append(f"{prefix}_FORM_" + token["word"])
+        if "lemma" in token and self._check_informative(token["lemma"]):
+            result.append(f"{prefix}_LEMMA_" + token["lemma"])
+        if self._check_informative(token["tag"]):
+            result.append(f"{prefix}_POS_" + token["tag"])
+        if "feats" in token and self._check_informative(token["feats"]):
+            feats = token["feats"].split("|")
+            for feat in feats:
+                result.append(f"{prefix}_FEATS_" + feat)
         return result
 
 
