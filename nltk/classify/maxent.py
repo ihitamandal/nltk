@@ -51,6 +51,8 @@ For all values of ``feat_val`` and ``some_label``.  This mapping is
 performed by classes that implement the ``MaxentFeatureEncodingI``
 interface.
 """
+from collections import OrderedDict
+
 try:
     import numpy
 except ImportError:
