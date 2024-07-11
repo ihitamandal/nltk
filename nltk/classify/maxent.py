@@ -51,6 +51,8 @@ For all values of ``feat_val`` and ``some_label``.  This mapping is
 performed by classes that implement the ``MaxentFeatureEncodingI``
 interface.
 """
+from nltk.classify.api import ClassifierI
+
 try:
     import numpy
 except ImportError:
@@ -207,15 +209,13 @@ class MaxentClassifier(ClassifierI):
         """
         Generates the ranked list of informative features from most to least.
         """
-        if hasattr(self, "_most_informative_features"):
-            return self._most_informative_features[:n]
-        else:
+        if not hasattr(self, "_most_informative_features"):
             self._most_informative_features = sorted(
-                list(range(len(self._weights))),
+                range(len(self._weights)),
                 key=lambda fid: abs(self._weights[fid]),
                 reverse=True,
             )
-            return self._most_informative_features[:n]
+        return self._most_informative_features[:n]
 
     def show_most_informative_features(self, n=10, show="all"):
         """
