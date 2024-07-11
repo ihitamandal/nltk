@@ -251,15 +251,13 @@ class TnT(TaggerI):
         self._l2 = tl2 / (tl1 + tl2 + tl3)
         self._l3 = tl3 / (tl1 + tl2 + tl3)
 
-    def _safe_div(self, v1, v2):
+    @staticmethod
+    def _safe_div(v1, v2):
         """
         Safe floating point division function, does not allow division by 0
         returns -1 if the denominator is 0
         """
-        if v2 == 0:
-            return -1
-        else:
-            return v1 / v2
+        return v1 / v2 if v2 != 0 else -1
 
     def tagdata(self, data):
         """
