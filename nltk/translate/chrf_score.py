@@ -99,13 +99,10 @@ def sentence_chrf(
 
 
 def _preprocess(sent, ignore_whitespace):
-    if type(sent) != str:
-        # turn list of tokens into a string
+    if isinstance(sent, list):
         sent = " ".join(sent)
 
-    if ignore_whitespace:
-        sent = re.sub(r"\s+", "", sent)
-    return sent
+    return re.sub(r"\s+", "", sent) if ignore_whitespace else sent
 
 
 def chrf_precision_recall_fscore_support(
@@ -134,20 +131,23 @@ def chrf_precision_recall_fscore_support(
     """
     ref_ngrams = Counter(ngrams(reference, n))
     hyp_ngrams = Counter(ngrams(hypothesis, n))
-
-    # calculate the number of ngram matches
     overlap_ngrams = ref_ngrams & hyp_ngrams
-    tp = sum(overlap_ngrams.values())  # True positives.
-    tpfp = sum(hyp_ngrams.values())  # True positives + False positives.
-    tpfn = sum(ref_ngrams.values())  # True positives + False negatives.
+    tp = sum(overlap_ngrams.values())
+    tpfp = sum(hyp_ngrams.values())
+    tpfn = sum(ref_ngrams.values())
 
-    try:
-        prec = tp / tpfp  # precision
-        rec = tp / tpfn  # recall
-        factor = beta**2
-        fscore = (1 + factor) * (prec * rec) / (factor * prec + rec)
-    except ZeroDivisionError:
-        prec = rec = fscore = epsilon
+    if tpfp == 0 or tpfn == 0:
+        return epsilon, epsilon, epsilon, tp
+
+    prec = tp / tpfp
+    rec = tp / tpfn
+    factor = beta**2
+    fscore = (
+        (1 + factor) * (prec * rec) / (factor * prec + rec)
+        if (factor * prec + rec) != 0
+        else epsilon
+    )
+
     return prec, rec, fscore, tp
 
 
@@ -192,30 +192,19 @@ def corpus_chrf(
         hypotheses
     ), "The number of hypotheses and their references should be the same"
     num_sents = len(hypotheses)
-
-    # Keep f-scores for each n-gram order separate
     ngram_fscores = defaultdict(list)
 
-    # Iterate through each hypothesis and their corresponding references.
-    for reference, hypothesis in zip(references, hypotheses):
-        # preprocess both reference and hypothesis
-        reference = _preprocess(reference, ignore_whitespace)
-        hypothesis = _preprocess(hypothesis, ignore_whitespace)
+    preprocessed_refs = [_preprocess(ref, ignore_whitespace) for ref in references]
+    preprocessed_hyps = [_preprocess(hyp, ignore_whitespace) for hyp in hypotheses]
 
-        # Calculate f-scores for each sentence and for each n-gram order
-        # separately.
+    for reference, hypothesis in zip(preprocessed_refs, preprocessed_hyps):
         for n in range(min_len, max_len + 1):
-            # Compute the precision, recall, fscore and support.
             prec, rec, fscore, tp = chrf_precision_recall_fscore_support(
                 reference, hypothesis, n, beta=beta
             )
             ngram_fscores[n].append(fscore)
 
-    # how many n-gram sizes
     num_ngram_sizes = len(ngram_fscores)
+    total_scores = [sum(fscores) for fscores in ngram_fscores.values()]
 
-    # sum of f-scores over all sentences for each n-gram order
-    total_scores = [sum(fscores) for n, fscores in ngram_fscores.items()]
-
-    # macro-average over n-gram orders and over all sentences
     return (sum(total_scores) / num_ngram_sizes) / num_sents
