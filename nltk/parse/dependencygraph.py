@@ -428,7 +428,7 @@ class DependencyGraph:
     def _hd(self, i):
         try:
             return self.nodes[i]["head"]
-        except IndexError:
+        except KeyError:
             return None
 
     def _rel(self, i):
@@ -545,6 +545,20 @@ class DependencyGraph:
         g.add_edges_from(nx_edgelist)
 
         return g
+
+    @staticmethod
+    def _default_node():
+        return {
+            "address": None,
+            "word": None,
+            "lemma": None,
+            "ctag": None,
+            "tag": None,
+            "feats": None,
+            "head": None,
+            "deps": defaultdict(list),
+            "rel": None,
+        }
 
 
 def dot2img(dot_string, t="svg"):
