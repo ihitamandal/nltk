@@ -51,6 +51,8 @@ For all values of ``feat_val`` and ``some_label``.  This mapping is
 performed by classes that implement the ``MaxentFeatureEncodingI``
 interface.
 """
+from nltk.util import OrderedDict
+
 try:
     import numpy
 except ImportError:
@@ -763,8 +765,8 @@ class TadmEventMaxentFeatureEncoding(BinaryMaxentFeatureEncoding):
         return self._labels
 
     def describe(self, fid):
-        for feature, label in self._mapping:
-            if self._mapping[(feature, label)] == fid:
+        for (feature, label), fid_value in self._mapping.items():
+            if fid_value == fid:
                 return (feature, label)
 
     def length(self):
