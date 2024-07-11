@@ -152,19 +152,22 @@ class CutoffChecker:
             return False  # no cutoff reached.
 
 
-######################################################################
-# { Demos
-######################################################################
-
-
 def names_demo_features(name):
-    features = {}
-    features["alwayson"] = True
-    features["startswith"] = name[0].lower()
-    features["endswith"] = name[-1].lower()
-    for letter in "abcdefghijklmnopqrstuvwxyz":
-        features["count(%s)" % letter] = name.lower().count(letter)
-        features["has(%s)" % letter] = letter in name.lower()
+    lower_name = name.lower()
+    features = {
+        "alwayson": True,
+        "startswith": lower_name[0],
+        "endswith": lower_name[-1],
+    }
+
+    letter_counts = {
+        letter: lower_name.count(letter) for letter in "abcdefghijklmnopqrstuvwxyz"
+    }
+
+    for letter, count in letter_counts.items():
+        features[f"count({letter})"] = count
+        features[f"has({letter})"] = count > 0
+
     return features
 
 
