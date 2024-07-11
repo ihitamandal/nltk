@@ -99,12 +99,14 @@ def sentence_chrf(
 
 
 def _preprocess(sent, ignore_whitespace):
-    if type(sent) != str:
+    if not isinstance(sent, str):
         # turn list of tokens into a string
         sent = " ".join(sent)
 
     if ignore_whitespace:
-        sent = re.sub(r"\s+", "", sent)
+        sent = (
+            sent.replace(" ", "").replace("\n", "").replace("\t", "")
+        )  # manually remove common whitespaces
     return sent
 
 
