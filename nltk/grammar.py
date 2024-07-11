@@ -71,6 +71,7 @@ with the right hand side (*rhs*) in a tree (*tree*) is known as
 import re
 from collections import deque
 from functools import total_ordering
+from typing import Any
 
 from nltk.featstruct import SLASH, TYPE, FeatDict, FeatStruct, FeatStructReader
 from nltk.internals import raise_unorderable_types
@@ -223,11 +224,8 @@ class FeatStructNonterminal(FeatDict, Nonterminal):
         return self
 
 
-def is_nonterminal(item):
-    """
-    :return: True if the item is a ``Nonterminal``.
-    :rtype: bool
-    """
+def is_nonterminal(item: Any) -> bool:
+    """Check if an item is a Nonterminal."""
     return isinstance(item, Nonterminal)
 
 
