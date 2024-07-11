@@ -281,10 +281,9 @@ class Transition:
         :param configuration: is the current configuration
         :return: A new configuration or -1 if the pre-condition is not satisfied
         """
-        if len(conf.buffer) <= 0:
+        if not conf.buffer:
             return -1
-        idx_wi = conf.buffer.pop(0)
-        conf.stack.append(idx_wi)
+        conf.stack.append(conf.buffer.pop(0))
 
 
 class TransitionParser(ParserI):
