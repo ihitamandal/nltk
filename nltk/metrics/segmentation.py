@@ -182,41 +182,66 @@ def ghd(ref, hyp, ins_cost=2.0, del_cost=2.0, shift_cost_coeff=1.0, boundary="1"
     return mat[-1, -1]
 
 
-# Beeferman's Pk text segmentation evaluation metric
+def pk(
+    ref: str | list[str],
+    hyp: str | list[str],
+    k: int | None = None,
+    boundary: str | int | bool = "1",
+) -> float:
+    """Compute the Pk metric for a pair of segmentations.
 
+    Parameters
+    ----------
+    ref : str or list of str
+        The reference segmentation.
+    hyp : str or list of str
+        The segmentation to evaluate.
+    k : int, optional
+        Window size. If None, set to half of the average reference segment length.
+    boundary : str, int, or bool
+        Boundary value.
 
-def pk(ref, hyp, k=None, boundary="1"):
-    """
-    Compute the Pk metric for a pair of segmentations A segmentation
-    is any sequence over a vocabulary of two items (e.g. "0", "1"),
-    where the specified boundary value is used to mark the edge of a
-    segmentation.
+    Returns
+    -------
+    float
+        The Pk metric.
 
+    Examples
+    --------
     >>> '%.2f' % pk('0100'*100, '1'*400, 2)
     '0.50'
     >>> '%.2f' % pk('0100'*100, '0'*400, 2)
     '0.50'
     >>> '%.2f' % pk('0100'*100, '0100'*100, 2)
     '0.00'
-
-    :param ref: the reference segmentation
-    :type ref: str or list
-    :param hyp: the segmentation to evaluate
-    :type hyp: str or list
-    :param k: window size, if None, set to half of the average reference segment length
-    :type boundary: str or int or bool
-    :param boundary: boundary value
-    :type boundary: str or int or bool
-    :rtype: float
     """
-
     if k is None:
         k = int(round(len(ref) / (ref.count(boundary) * 2.0)))
 
-    err = 0
-    for i in range(len(ref) - k + 1):
-        r = ref[i : i + k].count(boundary) > 0
-        h = hyp[i : i + k].count(boundary) > 0
-        if r != h:
-            err += 1
+    ref_boundaries = compute_window_boundary(ref, boundary, k)
+    hyp_boundaries = compute_window_boundary(hyp, boundary, k)
+
+    err = sum(r != h for r, h in zip(ref_boundaries, hyp_boundaries))
     return err / (len(ref) - k + 1.0)
+
+
+def compute_window_boundary(
+    ref: str | list[str], boundary: str | int | bool, k: int
+) -> list[bool]:
+    """Compute boundary presence in each window of size k.
+
+    Parameters
+    ----------
+    ref : str or list of str
+        The reference segmentation.
+    boundary : str, int, or bool
+        Boundary value.
+    k : int
+        Window size.
+
+    Returns
+    -------
+    list of bool
+        Boundary presence in each window.
+    """
+    return [(boundary in ref[i : i + k]) for i in range(len(ref) - k + 1)]
