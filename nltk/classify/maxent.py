@@ -51,6 +51,7 @@ For all values of ``feat_val`` and ``some_label``.  This mapping is
 performed by classes that implement the ``MaxentFeatureEncodingI``
 interface.
 """
+
 try:
     import numpy
 except ImportError:
@@ -767,7 +768,15 @@ class TadmEventMaxentFeatureEncoding(BinaryMaxentFeatureEncoding):
             if self._mapping[(feature, label)] == fid:
                 return (feature, label)
 
-    def length(self):
+    def length(self) -> int:
+        """
+        Get the length of the mapping.
+
+        Returns
+        -------
+        int
+            Length of the mapping.
+        """
         return len(self._mapping)
 
     @classmethod
