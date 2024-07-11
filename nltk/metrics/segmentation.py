@@ -182,15 +182,9 @@ def ghd(ref, hyp, ins_cost=2.0, del_cost=2.0, shift_cost_coeff=1.0, boundary="1"
     return mat[-1, -1]
 
 
-# Beeferman's Pk text segmentation evaluation metric
-
-
 def pk(ref, hyp, k=None, boundary="1"):
     """
-    Compute the Pk metric for a pair of segmentations A segmentation
-    is any sequence over a vocabulary of two items (e.g. "0", "1"),
-    where the specified boundary value is used to mark the edge of a
-    segmentation.
+    Compute the Pk metric for a pair of segmentations
 
     >>> '%.2f' % pk('0100'*100, '1'*400, 2)
     '0.50'
@@ -213,10 +207,25 @@ def pk(ref, hyp, k=None, boundary="1"):
     if k is None:
         k = int(round(len(ref) / (ref.count(boundary) * 2.0)))
 
+    ref_window_count = ref[:k].count(boundary)
+    hyp_window_count = hyp[:k].count(boundary)
+    ref_len_minus_k_plus_1 = len(ref) - k + 1
     err = 0
-    for i in range(len(ref) - k + 1):
-        r = ref[i : i + k].count(boundary) > 0
-        h = hyp[i : i + k].count(boundary) > 0
+
+    for i in range(ref_len_minus_k_plus_1):
+        if i > 0:
+            if ref[i - 1] == boundary:
+                ref_window_count -= 1
+            if ref[i + k - 1] == boundary:
+                ref_window_count += 1
+            if hyp[i - 1] == boundary:
+                hyp_window_count -= 1
+            if hyp[i + k - 1] == boundary:
+                hyp_window_count += 1
+
+        r = ref_window_count > 0
+        h = hyp_window_count > 0
         if r != h:
             err += 1
-    return err / (len(ref) - k + 1.0)
+
+    return err / ref_len_minus_k_plus_1
