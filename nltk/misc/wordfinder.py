@@ -18,34 +18,42 @@ def revword(word):
     return word
 
 
-# try to insert word at position x,y; direction encoded in xf,yf
-def step(word, x, xf, y, yf, grid):
-    for i in range(len(word)):
-        if grid[xf(i)][yf(i)] != "" and grid[xf(i)][yf(i)] != word[i]:
+def step(word, xf_indices, yf_indices, grid):
+    for wf, xf, yf in zip(word, xf_indices, yf_indices):
+        if grid[xf][yf] != "" and grid[xf][yf] != wf:
             return False
-    for i in range(len(word)):
-        grid[xf(i)][yf(i)] = word[i]
+    for wf, xf, yf in zip(word, xf_indices, yf_indices):
+        grid[xf][yf] = wf
     return True
 
 
-# try to insert word at position x,y, in direction dir
 def check(word, dir, x, y, grid, rows, cols):
+    word_len = len(word)
+
     if dir == 1:
-        if x - len(word) < 0 or y - len(word) < 0:
+        if x - word_len < 0 or y - word_len < 0:
             return False
-        return step(word, x, lambda i: x - i, y, lambda i: y - i, grid)
+        xf_indices = range(x, x - word_len, -1)
+        yf_indices = range(y, y - word_len, -1)
     elif dir == 2:
-        if x - len(word) < 0:
+        if x - word_len < 0:
             return False
-        return step(word, x, lambda i: x - i, y, lambda i: y, grid)
+        xf_indices = range(x, x - word_len, -1)
+        yf_indices = [y] * word_len
     elif dir == 3:
-        if x - len(word) < 0 or y + (len(word) - 1) >= cols:
+        if x - word_len < 0 or y + word_len > cols:
             return False
-        return step(word, x, lambda i: x - i, y, lambda i: y + i, grid)
+        xf_indices = range(x, x - word_len, -1)
+        yf_indices = range(y, y + word_len)
     elif dir == 4:
-        if y - len(word) < 0:
+        if y - word_len < 0:
             return False
-        return step(word, x, lambda i: x, y, lambda i: y - i, grid)
+        xf_indices = [x] * word_len
+        yf_indices = range(y, y - word_len, -1)
+    else:
+        return False
+
+    return step(word, xf_indices, yf_indices, grid)
 
 
 def wordfinder(words, rows=20, cols=20, attempts=50, alph="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
