@@ -52,13 +52,15 @@ def precision(reference, test):
     :param test: A set of values to compare against the reference set.
     :rtype: float or None
     """
-    if not hasattr(reference, "intersection") or not hasattr(test, "intersection"):
+    if not isinstance(reference, set) or not isinstance(test, set):
         raise TypeError("reference and test should be sets")
 
-    if len(test) == 0:
+    len_test = len(test)
+    if len_test == 0:
         return None
-    else:
-        return len(reference.intersection(test)) / len(test)
+
+    common_elements = reference & test  # Use set intersection operator
+    return len(common_elements) / len_test
 
 
 def recall(reference, test):
@@ -74,13 +76,15 @@ def recall(reference, test):
     :param test: A set of values to compare against the reference set.
     :rtype: float or None
     """
-    if not hasattr(reference, "intersection") or not hasattr(test, "intersection"):
+    if not isinstance(reference, set) or not isinstance(test, set):
         raise TypeError("reference and test should be sets")
 
-    if len(reference) == 0:
+    len_reference = len(reference)
+    if len_reference == 0:
         return None
-    else:
-        return len(reference.intersection(test)) / len(reference)
+
+    common_elements = reference & test  # Use set intersection operator
+    return len(common_elements) / len_reference
 
 
 def f_measure(reference, test, alpha=0.5):
@@ -107,12 +111,23 @@ def f_measure(reference, test, alpha=0.5):
     :param test: A set of values to compare against the reference set.
     :rtype: float or None
     """
-    p = precision(reference, test)
-    r = recall(reference, test)
-    if p is None or r is None:
+    if not isinstance(reference, set) or not isinstance(test, set):
+        raise TypeError("reference and test should be sets")
+
+    len_test = len(test)
+    len_reference = len(reference)
+    if len_test == 0 or len_reference == 0:
         return None
-    if p == 0 or r == 0:
+
+    common_elements = reference & test
+    len_common = len(common_elements)
+
+    if len_common == 0:
         return 0
+
+    p = len_common / len_test
+    r = len_common / len_reference
+
     return 1.0 / (alpha / p + (1 - alpha) / r)
 
 
