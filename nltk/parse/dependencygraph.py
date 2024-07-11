@@ -546,6 +546,20 @@ class DependencyGraph:
 
         return g
 
+    @staticmethod
+    def default_node():
+        return {
+            "address": None,
+            "word": None,
+            "lemma": None,
+            "ctag": None,
+            "tag": None,
+            "feats": None,
+            "head": None,
+            "deps": defaultdict(list),
+            "rel": None,
+        }
+
 
 def dot2img(dot_string, t="svg"):
     """
