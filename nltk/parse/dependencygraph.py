@@ -518,8 +518,8 @@ class DependencyGraph:
             )
         else:
             raise ValueError(
-                "Number of tab-delimited fields ({}) not supported by "
-                "CoNLL(10) or Malt-Tab(4) format".format(style)
+                f"Number of tab-delimited fields ({style}) not supported by "
+                "CoNLL(10) or Malt-Tab(4) format"
             )
 
         return "".join(
