@@ -406,11 +406,6 @@ class TnT(TaggerI):
         return self._tagword(sent, new_states)
 
 
-########################################
-# helper function -- basic sentence tokenizer
-########################################
-
-
 def basic_sent_chop(data, raw=True):
     """
     Basic method for tokenizing input into sentences
@@ -436,27 +431,23 @@ def basic_sent_chop(data, raw=True):
     tagger. Better sentence tokenization will further enhance the results.
     """
 
+    sent_mark = {",", ".", "?", "!"}
     new_data = []
     curr_sent = []
-    sent_mark = [",", ".", "?", "!"]
 
-    if raw:
-        for word in data:
-            if word in sent_mark:
-                curr_sent.append(word)
-                new_data.append(curr_sent)
-                curr_sent = []
-            else:
-                curr_sent.append(word)
+    append_sent = curr_sent.append
+    new_data_append = new_data.append
 
-    else:
-        for word, tag in data:
-            if word in sent_mark:
-                curr_sent.append((word, tag))
-                new_data.append(curr_sent)
-                curr_sent = []
-            else:
-                curr_sent.append((word, tag))
+    for item in data:
+        word = item if raw else item[0]
+
+        if word in sent_mark:
+            append_sent(item)
+            new_data_append(curr_sent)
+            curr_sent = []
+            append_sent = curr_sent.append
+        else:
+            append_sent(item)
     return new_data
 
 
