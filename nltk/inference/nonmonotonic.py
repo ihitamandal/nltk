@@ -33,18 +33,30 @@ from nltk.sem.logic import (
     operator,
     unique_variable,
 )
+from typing import List, Optional, Set
 
 
 class ProverParseError(Exception):
     pass
 
 
-def get_domain(goal, assumptions):
-    if goal is None:
-        all_expressions = assumptions
-    else:
-        all_expressions = assumptions + [-goal]
-    return reduce(operator.or_, (a.constants() for a in all_expressions), set())
+def get_domain(goal: Optional[Expression], assumptions: List[Expression]) -> Set[str]:
+    """Computes the domain of constants from the goal and assumptions.
+
+    Parameters
+    ----------
+    goal : Optional[Expression]
+        The goal expression.
+    assumptions : List[Expression]
+        A list of assumption expressions.
+
+    Returns
+    -------
+    Set[str]
+        A set of constants from the goal and assumptions.
+    """
+    cache = cache_constants(assumptions + ([goal] if goal else []))
+    return accumulate_constants(goal, assumptions, cache)
 
 
 class ClosedDomainProver(ProverCommandDecorator):
@@ -555,6 +567,47 @@ def demo():
     closed_world_demo()
     combination_prover_demo()
     default_reasoning_demo()
+
+
+def cache_constants(expressions: List[Expression]) -> dict[Expression, Set[str]]:
+    """Caches the constants found in each expression.
+
+    Parameters
+    ----------
+    expressions : List[Expression]
+        A list of logical expressions.
+
+    Returns
+    -------
+    dict[Expression, Set[str]]
+        A dictionary mapping each expression to its set of constants.
+    """
+    return {expr: expr.constants() for expr in expressions}
+
+
+def accumulate_constants(
+    goal: Optional[Expression],
+    assumptions: List[Expression],
+    cache: dict[Expression, Set[str]],
+) -> Set[str]:
+    """Accumulates constants from the goal and assumptions using the cache.
+
+    Parameters
+    ----------
+    goal : Optional[Expression]
+        The goal expression.
+    assumptions : List[Expression]
+        A list of assumption expressions.
+    cache : dict[Expression, Set[str]]
+        A dictionary mapping each expression to its set of constants.
+
+    Returns
+    -------
+    Set[str]
+        A set of constants accumulated from the goal and assumptions.
+    """
+    all_expressions = (goal and assumptions + [-goal]) or assumptions
+    return set().union(*(cache[expr] for expr in all_expressions))
 
 
 if __name__ == "__main__":
