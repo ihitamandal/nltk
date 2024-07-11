@@ -432,10 +432,7 @@ class DependencyGraph:
             return None
 
     def _rel(self, i):
-        try:
-            return self.nodes[i]["rel"]
-        except IndexError:
-            return None
+        return self.nodes[i]["rel"] if i in self.nodes else None
 
     # what's the return type?  Boolean or list?
     def contains_cycle(self):
