@@ -12,6 +12,8 @@ from copy import deepcopy
 from operator import itemgetter
 from os import remove
 
+from nltk.parse import ParserI
+
 try:
     from numpy import array
     from scipy import sparse
@@ -330,15 +332,13 @@ class TransitionParser(ParserI):
         :type features: list(str)
         :return : string of binary features in libsvm format  which is 'featureID:value' pairs
         """
-        unsorted_result = []
-        for feature in features:
-            self._dictionary.setdefault(feature, len(self._dictionary))
-            unsorted_result.append(self._dictionary[feature])
+        dictionary = self._dictionary
+        unsorted_result = [
+            dictionary.setdefault(feature, len(dictionary)) for feature in features
+        ]
 
         # Default value of each feature is 1.0
-        return " ".join(
-            str(featureID) + ":1.0" for featureID in sorted(unsorted_result)
-        )
+        return " ".join(f"{featureID}:1.0" for featureID in sorted(unsorted_result))
 
     def _is_projective(self, depgraph):
         arc_list = []
