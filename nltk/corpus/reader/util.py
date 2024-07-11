@@ -14,12 +14,8 @@ import tempfile
 from functools import reduce
 from xml.etree import ElementTree
 
-from nltk.data import (
-    FileSystemPathPointer,
-    PathPointer,
-    SeekableUnicodeStreamReader,
-    ZipFilePathPointer,
-)
+from nltk.data import (FileSystemPathPointer, PathPointer,
+                       SeekableUnicodeStreamReader, ZipFilePathPointer)
 from nltk.internals import slice_bounds
 from nltk.tokenize import wordpunct_tokenize
 from nltk.util import AbstractLazySequence, LazyConcatenation, LazySubsequence
@@ -600,22 +596,14 @@ def read_line_block(stream):
 
 
 def read_blankline_block(stream):
-    s = ""
-    while True:
-        line = stream.readline()
-        # End of file:
-        if not line:
-            if s:
-                return [s]
-            else:
-                return []
-        # Blank line:
-        elif line and not line.strip():
-            if s:
-                return [s]
-        # Other line:
-        else:
-            s += line
+    lines = []
+    for line in stream:
+        # End reading on blank line
+        if line.strip():
+            lines.append(line)
+        elif lines:
+            break
+    return ["".join(lines)] if lines else []
 
 
 def read_alignedsent_block(stream):
