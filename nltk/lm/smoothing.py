@@ -22,15 +22,8 @@ def _count_values_gt_zero(distribution):
     Assumes distribution is either a mapping with counts as values or
     an instance of `nltk.ConditionalFreqDist`.
     """
-    as_count = (
-        methodcaller("N")
-        if isinstance(distribution, ConditionalFreqDist)
-        else lambda count: count
-    )
-    # We explicitly check that values are > 0 to guard against negative counts.
-    return sum(
-        1 for dist_or_count in distribution.values() if as_count(dist_or_count) > 0
-    )
+    is_cfd = isinstance(distribution, ConditionalFreqDist)
+    return sum(1 if (d.N() if is_cfd else d) > 0 else 0 for d in distribution.values())
 
 
 class WittenBell(Smoothing):
