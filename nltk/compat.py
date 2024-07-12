@@ -6,7 +6,7 @@
 # For license information, see LICENSE.TXT
 
 import os
-from functools import wraps
+from functools import update_wrapper, wraps
 
 # ======= Compatibility for datasets that care about Python versions ========
 
@@ -33,11 +33,8 @@ def add_py3_data(path):
     return path
 
 
-# for use in adding /PY3 to the second (filename) argument
-# of the file pointers in data.py
 def py3_data(init_func):
-    def _decorator(*args, **kwargs):
-        args = (args[0], add_py3_data(args[1])) + args[2:]
-        return init_func(*args, **kwargs)
+    def _decorator(self, data, *args, **kwargs):
+        return init_func(self, add_py3_data(data), *args, **kwargs)
 
-    return wraps(init_func)(_decorator)
+    return update_wrapper(_decorator, init_func)
