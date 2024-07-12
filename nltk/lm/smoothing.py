@@ -22,15 +22,9 @@ def _count_values_gt_zero(distribution):
     Assumes distribution is either a mapping with counts as values or
     an instance of `nltk.ConditionalFreqDist`.
     """
-    as_count = (
-        methodcaller("N")
-        if isinstance(distribution, ConditionalFreqDist)
-        else lambda count: count
-    )
-    # We explicitly check that values are > 0 to guard against negative counts.
-    return sum(
-        1 for dist_or_count in distribution.values() if as_count(dist_or_count) > 0
-    )
+    if isinstance(distribution, ConditionalFreqDist):
+        return sum(1 for dist in distribution.values() if dist.N() > 0)
+    return sum(1 for count in distribution.values() if count > 0)
 
 
 class WittenBell(Smoothing):
@@ -68,8 +62,9 @@ class AbsoluteDiscounting(Smoothing):
         return alpha, gamma
 
     def _gamma(self, context):
-        n_plus = _count_values_gt_zero(self.counts[context])
-        return (self.discount * n_plus) / self.counts[context].N()
+        context_counts = self.counts[context]
+        n_plus = _count_values_gt_zero(context_counts)
+        return (self.discount * n_plus) / context_counts.N()
 
     def unigram_score(self, word):
         return self.counts.unigrams.freq(word)
