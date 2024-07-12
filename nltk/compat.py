@@ -23,12 +23,13 @@ _PY3_DATA_UPDATES = [os.path.join(*path_list) for path_list in DATA_UPDATES]
 
 
 def add_py3_data(path):
+    path_str = str(path)  # Convert to string once
     for item in _PY3_DATA_UPDATES:
-        if item in str(path) and "/PY3" not in str(path):
-            pos = path.index(item) + len(item)
-            if path[pos : pos + 4] == ".zip":
+        if item in path_str and "/PY3" not in path_str:
+            pos = path_str.index(item) + len(item)
+            if path_str[pos : pos + 4] == ".zip":
                 pos += 4
-            path = path[:pos] + "/PY3" + path[pos:]
+            path = path_str[:pos] + "/PY3" + path_str[pos:]
             break
     return path
 
