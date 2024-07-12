@@ -744,21 +744,19 @@ class DrtBinaryExpression(DrtExpression, BinaryExpression):
         first_lines = _pad_vertically(first_lines, max_lines)
         second_lines = _pad_vertically(second_lines, max_lines)
         blank = " " * len(op)
-        first_second_lines = list(zip(first_lines, second_lines))
-        return (
-            [
-                " " + first_line + " " + blank + " " + second_line + " "
-                for first_line, second_line in first_second_lines[:2]
-            ]
-            + [
-                "(" + first_line + " " + op + " " + second_line + ")"
-                for first_line, second_line in first_second_lines[2:3]
-            ]
-            + [
-                " " + first_line + " " + blank + " " + second_line + " "
-                for first_line, second_line in first_second_lines[3:]
-            ]
-        )
+
+        result_lines = []
+
+        # Introduce a loop to handle appending lines more efficiently
+        for i in range(max_lines):
+            first_line = first_lines[i]
+            second_line = second_lines[i]
+            if i == 2:
+                result_lines.append(f"({first_line} {op} {second_line})")
+            else:
+                result_lines.append(f" {first_line} {blank} {second_line} ")
+
+        return result_lines
 
     def _pretty_subex(self, subex):
         return subex._pretty()
