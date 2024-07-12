@@ -428,9 +428,12 @@ class _Hypothesis:
         """
         translated_positions = []
         current_hypothesis = self
+        append = translated_positions.append
         while current_hypothesis.previous is not None:
             translated_span = current_hypothesis.src_phrase_span
-            translated_positions.extend(range(translated_span[0], translated_span[1]))
+            start, end = translated_span
+            for pos in range(start, end):
+                append(pos)
             current_hypothesis = current_hypothesis.previous
         return translated_positions
 
