@@ -28,6 +28,7 @@ from urllib.request import (
 
 from nltk.collections import *
 from nltk.internals import deprecated, raise_unorderable_types, slice_bounds
+from functools import lru_cache
 
 ######################################################################
 # Short usage message
@@ -139,39 +140,48 @@ def tokenwrap(tokens, separator=" ", width=70):
     return "\n".join(textwrap.wrap(separator.join(tokens), width=width))
 
 
-def cut_string(s, width=70):
-    """
-    Cut off and return a given width of a string
+def cut_string(s: str, width: int = 70) -> str:
+    """Cut off and return a given width of a string.
 
     Return the same as s[:width] if width >= 0 or s[-width:] if
     width < 0, as long as s has no unicode combining characters.
-    If it has combining characters make sure the returned string's
+    If it has combining characters, make sure the returned string's
     visible width matches the called-for width.
 
-    :param s: the string to cut
-    :type s: str
-    :param width: the display_width
-    :type width: int
+    Parameters
+    ----------
+    s : str
+        The string to cut.
+    width : int, optional
+        The display width (default is 70).
+
+    Returns
+    -------
+    str
+        The cut string with the correct visible width.
     """
-    chars_sofar = 0
+    if not has_combining_characters(s):
+        return s[:width] if width >= 0 else s[width:]
+
+    if width < 0:
+        s = s[::-1]  # reverse string for negative width handling
+
+    result = []
     width_sofar = 0
-    result = ""
-
     abs_width = abs(width)
-    max_chars = len(s)
-    while width_sofar < abs_width and chars_sofar < max_chars:
-        if width < 0:
-            char = s[-(chars_sofar + 1)]
-            result = char + result
-        else:
-            char = s[chars_sofar]
-            result = result + char
 
-        chars_sofar += 1
+    for char in s:
+        if width_sofar >= abs_width:
+            break
+
+        result.append(char)
         if not unicodedata.combining(char):
             width_sofar += 1
 
-    return result
+    if width < 0:
+        result.reverse()
+
+    return "".join(result)
 
 
 ##########################################################################
@@ -1252,3 +1262,20 @@ def parallelize_preprocess(func, iterator, processes, progress_bar=False):
     if processes <= 1:
         return map(func, iterator)
     return Parallel(n_jobs=processes)(delayed(func)(line) for line in iterator)
+
+
+@lru_cache(maxsize=None)
+def has_combining_characters(s: str) -> bool:
+    """Check if the string contains combining characters.
+
+    Parameters
+    ----------
+    s : str
+        The string to check.
+
+    Returns
+    -------
+    bool
+        True if the string contains combining characters, False otherwise.
+    """
+    return any(unicodedata.combining(char) for char in s)
