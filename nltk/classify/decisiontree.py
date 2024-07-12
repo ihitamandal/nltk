@@ -107,28 +107,42 @@ class DecisionTreeClassifier(ClassifierI):
         """
         if self._fname is None:
             return f"{prefix}return {self._label!r}\n"
-        s = ""
-        for fval, result in sorted(
+
+        sorted_decisions = sorted(
             self._decisions.items(),
-            key=lambda item: (item[0] in [None, False, True], str(item[0]).lower()),
-        ):
-            s += f"{prefix}if {self._fname} == {fval!r}: "
+            key=lambda item: (item[0] in {None, False, True}, str(item[0]).lower()),
+        )
+
+        decision_code = []
+        for fval, result in sorted_decisions:
+            condition = f"{prefix}if {self._fname} == {fval!r}: "
             if result._fname is not None and depth > 1:
-                s += "\n" + result.pseudocode(prefix + "  ", depth - 1)
-            else:
-                s += f"return {result._label!r}\n"
-        if self._default is not None:
-            if len(self._decisions) == 1:
-                s += "{}if {} != {!r}: ".format(
-                    prefix, self._fname, list(self._decisions.keys())[0]
+                decision_code.append(
+                    condition + "\n" + result.pseudocode(prefix + "  ", depth - 1)
                 )
             else:
-                s += f"{prefix}else: "
-            if self._default._fname is not None and depth > 1:
-                s += "\n" + self._default.pseudocode(prefix + "  ", depth - 1)
+                decision_code.append(condition + f"return {result._label!r}\n")
+
+        if self._default is not None:
+            if len(sorted_decisions) == 1:
+                default_condition = (
+                    f"{prefix}if {self._fname} != {list(self._decisions.keys())[0]!r}: "
+                )
             else:
-                s += f"return {self._default._label!r}\n"
-        return s
+                default_condition = f"{prefix}else: "
+
+            if self._default._fname is not None and depth > 1:
+                decision_code.append(
+                    default_condition
+                    + "\n"
+                    + self._default.pseudocode(prefix + "  ", depth - 1)
+                )
+            else:
+                decision_code.append(
+                    default_condition + f"return {self._default._label!r}\n"
+                )
+
+        return "".join(decision_code)
 
     def __str__(self):
         return self.pretty_format()
