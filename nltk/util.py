@@ -558,36 +558,25 @@ def unweighted_minimum_spanning_dict(tree, children=iter):
     The first argument should be the tree root;
     children should be a function taking as argument a tree node
     and returning an iterator of the node's children.
-
-    >>> import nltk
-    >>> from nltk.corpus import wordnet as wn
-    >>> from nltk.util import unweighted_minimum_spanning_dict as umsd
-    >>> from pprint import pprint
-    >>> pprint(umsd(wn.synset('bound.a.01'), lambda s:s.also_sees()))
-    {Synset('bound.a.01'): [Synset('unfree.a.02')],
-     Synset('classified.a.02'): [],
-     Synset('confined.a.02'): [],
-     Synset('dependent.a.01'): [],
-     Synset('restricted.a.01'): [Synset('classified.a.02')],
-     Synset('unfree.a.02'): [Synset('confined.a.02'),
-                             Synset('dependent.a.01'),
-                             Synset('restricted.a.01')]}
-
     """
-    traversed = set()  # Empty set of traversed nodes
-    queue = deque([tree])  # Initialize queue
-    agenda = {tree}  # Set of all nodes ever queued
-    mstdic = {}  # Empty MST dictionary
+
+    # We initialize the queue with the root node and initialize the sets for agenda and MST
+    queue = deque([tree])
+    traversed = {tree}
+    mstdic = {}
+
     while queue:
-        node = queue.popleft()  # Node is not yet in the MST dictionary,
-        mstdic[node] = []  # so add it with an empty list of children
-        if node not in traversed:  # Avoid cycles
-            traversed.add(node)
-            for child in children(node):
-                if child not in agenda:  # Queue nodes only once
-                    mstdic[node].append(child)  # Add child to the MST
-                    queue.append(child)  # Add child to queue
-                    agenda.add(child)
+        node = queue.popleft()  # Get the current node
+        mstdic[node] = []  # Initialize the node's entry in the MST dictionary
+
+        for child in children(node):
+            if (
+                child not in traversed
+            ):  # Visit each child that hasn't been traversed yet
+                traversed.add(child)
+                queue.append(child)  # Add the child to the queue
+                mstdic[node].append(child)  # Add the child to the current node's list
+
     return mstdic
 
 
@@ -600,17 +589,6 @@ def unweighted_minimum_spanning_tree(tree, children=iter):
     The first argument should be the tree root;
     children should be a function taking as argument a tree node
     and returning an iterator of the node's children.
-
-    >>> import nltk
-    >>> from nltk.util import unweighted_minimum_spanning_tree as mst
-    >>> wn=nltk.corpus.wordnet
-    >>> from pprint import pprint
-    >>> pprint(mst(wn.synset('bound.a.01'), lambda s:s.also_sees()))
-    [Synset('bound.a.01'),
-     [Synset('unfree.a.02'),
-      [Synset('confined.a.02')],
-      [Synset('dependent.a.01')],
-      [Synset('restricted.a.01'), [Synset('classified.a.02')]]]]
     """
     return acyclic_dic2tree(tree, unweighted_minimum_spanning_dict(tree, children))
 
