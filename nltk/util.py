@@ -746,20 +746,23 @@ def transitive_closure(graph, reflexive=False):
     return closure_graph
 
 
-def invert_graph(graph):
-    """
-    Inverts a directed graph.
+def invert_graph(graph: dict[str, set[str]]) -> dict[str, set[str]]:
+    """Inverts a directed graph.
 
-    :param graph: the graph, represented as a dictionary of sets
-    :type graph: dict(set)
-    :return: the inverted graph
-    :rtype: dict(set)
+    Parameters
+    ----------
+    graph : dict[str, set[str]]
+        The graph, represented as a dictionary of sets.
+
+    Returns
+    -------
+    dict[str, set[str]]
+        The inverted graph.
     """
-    inverted = {}
-    for key in graph:
-        for value in graph[key]:
-            inverted.setdefault(value, set()).add(key)
-    return inverted
+    inverted = defaultdict(set)
+    for key, values in graph.items():
+        [inverted[value].add(key) for value in values]
+    return dict(inverted)
 
 
 ##########################################################################
