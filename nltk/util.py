@@ -153,25 +153,32 @@ def cut_string(s, width=70):
     :param width: the display_width
     :type width: int
     """
+    if width == 0:
+        return ""
+
     chars_sofar = 0
     width_sofar = 0
-    result = ""
-
     abs_width = abs(width)
     max_chars = len(s)
-    while width_sofar < abs_width and chars_sofar < max_chars:
-        if width < 0:
-            char = s[-(chars_sofar + 1)]
-            result = char + result
-        else:
-            char = s[chars_sofar]
-            result = result + char
 
-        chars_sofar += 1
-        if not unicodedata.combining(char):
-            width_sofar += 1
+    if width < 0:
+        # Iterate from the end to the beginning
+        for i in range(max_chars - 1, -1, -1):
+            char = s[i]
+            if not unicodedata.combining(char):
+                width_sofar += 1
+            if width_sofar >= abs_width:
+                return s[i:]
+    else:
+        # Iterate from the beginning to the end
+        for i in range(max_chars):
+            char = s[i]
+            if not unicodedata.combining(char):
+                width_sofar += 1
+            if width_sofar >= abs_width:
+                return s[: i + 1]
 
-    return result
+    return s
 
 
 ##########################################################################
