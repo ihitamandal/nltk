@@ -286,29 +286,31 @@ class ARFF_Formatter:
         string (note: not nominal) types.
         """
         # Find the set of all attested labels.
-        labels = {label for (tok, label) in tokens}
+        labels = {label for (_, label) in tokens}
 
         # Determine the types of all features.
         features = {}
-        for tok, label in tokens:
+        for tok, _ in tokens:
             for fname, fval in tok.items():
                 if issubclass(type(fval), bool):
                     ftype = "{True, False}"
-                elif issubclass(type(fval), (int, float, bool)):
+                elif issubclass(type(fval), (int, float)):
                     ftype = "NUMERIC"
-                elif issubclass(type(fval), str):
+                elif isinstance(fval, str):
                     ftype = "STRING"
                 elif fval is None:
                     continue  # can't tell the type.
                 else:
-                    raise ValueError("Unsupported value type %r" % ftype)
+                    raise ValueError(f"Unsupported value type {type(fval)}")
 
-                if features.get(fname, ftype) != ftype:
-                    raise ValueError("Inconsistent type for %s" % fname)
-                features[fname] = ftype
-        features = sorted(features.items())
+                if fname not in features:
+                    features[fname] = ftype
+                elif features[fname] != ftype:
+                    raise ValueError(f"Inconsistent type for {fname}")
 
-        return ARFF_Formatter(labels, features)
+        # Sort features by feature name
+        sorted_features = sorted(features.items())
+        return ARFF_Formatter(labels, sorted_features)
 
     def header_section(self):
         """Returns an ARFF header as a string."""
@@ -366,6 +368,79 @@ class ARFF_Formatter:
             return "%r" % fval
         else:
             return "%r" % fval
+
+    def format(self, tokens):
+        """Returns a string representation of ARFF output for the given data."""
+        return self.header_section() + self.data_section(tokens)
+
+    def labels(self):
+        """Returns the list of classes."""
+        return list(self._labels)
+
+    def write(self, outfile, tokens):
+        """Writes ARFF data to a file for the given data."""
+        if not hasattr(outfile, "write"):
+            with open(outfile, "w") as f:
+                f.write(self.format(tokens))
+        else:
+            outfile.write(self.format(tokens))
+            outfile.close()
+
+    def header_section(self):
+        """Returns an ARFF header as a string."""
+        # Header comment
+        header = [
+            "% Weka ARFF file",
+            "% Generated automatically by NLTK",
+            f"%% {time.ctime()}",
+            "",
+            "@RELATION rel",
+            "",
+        ]
+
+        # Input attribute specifications
+        for fname, ftype in self._features:
+            header.append(f"@ATTRIBUTE {fname} {ftype}")
+
+        # Label attribute specification
+        header.append(f"@ATTRIBUTE -label- {{{','.join(self._labels)}}}")
+        header.append("")
+
+        return "\n".join(header)
+
+    def data_section(self, tokens, labeled=None):
+        """
+        Returns the ARFF data section for the given data.
+
+        :param tokens: a list of featuresets (dicts) or labelled featuresets
+            which are tuples (featureset, label).
+        :param labeled: Indicates whether the given tokens are labeled
+            or not. If None, then the tokens will be assumed to be
+            labeled if the first token's value is a tuple or list.
+        """
+        if labeled is None:
+            labeled = tokens and isinstance(tokens[0], (tuple, list))
+        if not labeled:
+            tokens = [(tok, None) for tok in tokens]
+
+        lines = []
+        for tok, label in tokens:
+            line = ",".join(
+                self._fmt_arff_val(tok.get(fname)) for fname, _ in self._features
+            )
+            lines.append(f"{line},{self._fmt_arff_val(label)}")
+
+        return "\n@DATA\n" + "\n".join(lines)
+
+    def _fmt_arff_val(self, fval):
+        if fval is None:
+            return "?"
+        elif isinstance(fval, (bool, int)):
+            return str(fval)
+        elif isinstance(fval, float):
+            return repr(fval)
+        else:
+            return repr(fval)
 
 
 if __name__ == "__main__":
