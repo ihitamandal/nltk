@@ -194,6 +194,29 @@ class DrtParser(LogicParser):
     def make_LambdaExpression(self, variables, term):
         return DrtLambdaExpression(variables, term)
 
+    def fol(self):
+        return NegatedExpression(self.term.fol())
+
+    def get_refs(self, recursive=False):
+        """:see: AbstractExpression.get_refs()"""
+        return self.term.get_refs(recursive)
+
+    def _pretty(self):
+        term_lines = self.term._pretty()
+        term_prefix = ["    ", "__  ", "  | ", "    "]
+        # Utilizing zip with slicing to directly create the result list
+        return [
+            prefix + line
+            for prefix, line in zip(
+                term_prefix * (len(term_lines) // 4 + 1), term_lines
+            )
+        ]
+
+    def get_DrtTokens(self):
+        # Assuming DrtTokens retrieval could have been missed based on provided code
+        # Define the DrtTokens class/structure as per requirement
+        return DrtTokens
+
 
 class DrtExpression:
     """
