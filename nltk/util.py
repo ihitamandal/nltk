@@ -28,6 +28,7 @@ from urllib.request import (
 
 from nltk.collections import *
 from nltk.internals import deprecated, raise_unorderable_types, slice_bounds
+import sys
 
 ######################################################################
 # Short usage message
@@ -73,11 +74,6 @@ def usage(obj):
         )
 
 
-##########################################################################
-# IDLE
-##########################################################################
-
-
 def in_idle():
     """
     Return True if this function is run within idle.  Tkinter
@@ -89,9 +85,8 @@ def in_idle():
         results.
     :rtype: bool
     """
-    import sys
-
-    return sys.stdin.__class__.__name__ in ("PyShell", "RPCProxy")
+    stdin_class_name = type(sys.stdin).__name__
+    return stdin_class_name in ("PyShell", "RPCProxy")
 
 
 ##########################################################################
