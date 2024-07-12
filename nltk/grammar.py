@@ -1477,15 +1477,21 @@ _SPLIT_DG_RE = re.compile(r"""('[^']'|[-=]+>|"[^"]+"|'[^']+'|\|)""")
 def _read_dependency_production(s):
     if not _READ_DG_RE.match(s):
         raise ValueError("Bad production string")
-    pieces = _SPLIT_DG_RE.split(s)
-    pieces = [p for i, p in enumerate(pieces) if i % 2 == 1]
+
+    # It's slightly faster to use a list comprehension once than calling enumerate/split/list(filter) multiple times
+    pieces = [p for p in _SPLIT_DG_RE.findall(s) if p]
     lhside = pieces[0].strip("'\"")
     rhsides = [[]]
+    append_rhs = rhsides[-1].append
+
     for piece in pieces[2:]:
         if piece == "|":
             rhsides.append([])
+            append_rhs = rhsides[-1].append
         else:
-            rhsides[-1].append(piece.strip("'\""))
+            append_rhs(piece.strip("'\""))
+
+    # List comprehension for creating the final list of DependencyProductions
     return [DependencyProduction(lhside, rhside) for rhside in rhsides]
 
 
