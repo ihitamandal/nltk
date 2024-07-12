@@ -72,32 +72,36 @@ class DecisionTreeClassifier(ClassifierI):
     def pretty_format(self, width=70, prefix="", depth=4):
         """
         Return a string containing a pretty-printed version of this
-        decision tree.  Each line in this string corresponds to a
+        decision tree. Each line in this string corresponds to a
         single decision tree node or leaf, and indentation is used to
         display the structure of the decision tree.
         """
-        # [xx] display default!!
         if self._fname is None:
             n = width - len(prefix) - 15
-            return "{}{} {}\n".format(prefix, "." * n, self._label)
-        s = ""
-        for i, (fval, result) in enumerate(
-            sorted(
-                self._decisions.items(),
-                key=lambda item: (item[0] in [None, False, True], str(item[0]).lower()),
-            )
-        ):
+            return f"{prefix}{'.' * n} {self._label}\n"
+
+        decision_items = sorted(
+            self._decisions.items(),
+            key=lambda item: (item[0] in [None, False, True], str(item[0]).lower()),
+        )
+        lines = []
+
+        for fval, result in decision_items:
             hdr = f"{prefix}{self._fname}={fval}? "
             n = width - 15 - len(hdr)
-            s += "{}{} {}\n".format(hdr, "." * (n), result._label)
+            lines.append(f"{hdr}{'.' * n} {result._label}\n")
             if result._fname is not None and depth > 1:
-                s += result.pretty_format(width, prefix + "  ", depth - 1)
+                lines.append(result.pretty_format(width, prefix + "  ", depth - 1))
+
         if self._default is not None:
             n = width - len(prefix) - 21
-            s += "{}else: {} {}\n".format(prefix, "." * n, self._default._label)
+            lines.append(f"{prefix}else: {'.' * n} {self._default._label}\n")
             if self._default._fname is not None and depth > 1:
-                s += self._default.pretty_format(width, prefix + "  ", depth - 1)
-        return s
+                lines.append(
+                    self._default.pretty_format(width, prefix + "  ", depth - 1)
+                )
+
+        return "".join(lines)
 
     def pseudocode(self, prefix="", depth=4):
         """
