@@ -640,36 +640,39 @@ def read_alignedsent_block(stream):
 def read_regexp_block(stream, start_re, end_re=None):
     """
     Read a sequence of tokens from a stream, where tokens begin with
-    lines that match ``start_re``.  If ``end_re`` is specified, then
+    lines that match ``start_re``. If ``end_re`` is specified, then
     tokens end with lines that match ``end_re``; otherwise, tokens end
     whenever the next line matching ``start_re`` or EOF is found.
     """
+    start_re_compiled = re.compile(start_re)
+    end_re_compiled = re.compile(end_re) if end_re else None
+
     # Scan until we find a line matching the start regexp.
-    while True:
-        line = stream.readline()
-        if not line:
-            return []  # end of file.
-        if re.match(start_re, line):
+    for line in stream:
+        if start_re_compiled.match(line):
             break
+    else:
+        return []  # No matching start line found, end of file.
 
     # Scan until we find another line matching the regexp, or EOF.
     lines = [line]
-    while True:
-        oldpos = stream.tell()
-        line = stream.readline()
-        # End of file:
-        if not line:
-            return ["".join(lines)]
-        # End of token:
-        if end_re is not None and re.match(end_re, line):
-            return ["".join(lines)]
-        # Start of new token: backup to just before it starts, and
-        # return the token we've already collected.
-        if end_re is None and re.match(start_re, line):
-            stream.seek(oldpos)
-            return ["".join(lines)]
-        # Anything else is part of the token.
-        lines.append(line)
+    try:
+        for line in stream:
+            # End of token:
+            if end_re_compiled and end_re_compiled.match(line):
+                return ["".join(lines)]
+            # Start of new token:
+            if not end_re_compiled and start_re_compiled.match(line):
+                stream.seek(
+                    stream.tell() - len(line)
+                )  # Backup to just before it starts
+                return ["".join(lines)]
+            # Anything else is part of the token.
+            lines.append(line)
+    except:
+        pass  # Will hit this when reaching EOF.
+
+    return ["".join(lines)]
 
 
 def read_sexpr_block(stream, block_size=16384, comment_char=None):
