@@ -15,6 +15,8 @@ using it.
 """
 
 import json
+from functools import lru_cache
+from typing import Any
 
 json_tags = {}
 
@@ -40,26 +42,31 @@ class JSONTaggedEncoder(json.JSONEncoder):
 
 
 class JSONTaggedDecoder(json.JSONDecoder):
-    def decode(self, s):
+    def decode(self, s: str) -> Any:
         return self.decode_obj(super().decode(s))
 
     @classmethod
-    def decode_obj(cls, obj):
-        # Decode nested objects first.
+    def decode_obj(cls, obj: Any) -> Any:
         if isinstance(obj, dict):
-            obj = {key: cls.decode_obj(val) for (key, val) in obj.items()}
+            obj = {key: cls.decode_obj(val) for key, val in obj.items()}
         elif isinstance(obj, list):
-            obj = list(cls.decode_obj(val) for val in obj)
-        # Check if we have a tagged object.
+            obj = [cls.decode_obj(val) for val in obj]
+
         if not isinstance(obj, dict) or len(obj) != 1:
             return obj
+
         obj_tag = next(iter(obj.keys()))
         if not obj_tag.startswith("!"):
             return obj
-        if obj_tag not in json_tags:
-            raise ValueError("Unknown tag", obj_tag)
-        obj_cls = json_tags[obj_tag]
+
+        obj_cls = cls._cached_decode_tag(obj_tag)
         return obj_cls.decode_json_obj(obj[obj_tag])
+
+    @lru_cache(maxsize=256)
+    def _cached_decode_tag(tag: str) -> Any:
+        if tag not in json_tags:
+            raise ValueError("Unknown tag", tag)
+        return json_tags[tag]
 
 
 __all__ = ["register_tag", "json_tags", "JSONTaggedEncoder", "JSONTaggedDecoder"]
