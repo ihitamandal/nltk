@@ -183,7 +183,14 @@ def _leftmost_descendants(node):
         treepos = node.treepositions()
     except AttributeError:
         return []
-    return [node[x] for x in treepos[1:] if all(y == 0 for y in x)]
+
+    # Use a list comprehension to gather all left-descendant nodes
+    left_descendants = []
+    for pos in treepos[1:]:
+        if pos == (0,) * len(pos):
+            left_descendants.append(node[pos])
+
+    return left_descendants
 
 
 def _rightmost_descendants(node):
