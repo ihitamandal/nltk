@@ -751,17 +751,20 @@ def _sub_space(m):
 def _parse_sexpr_block(block):
     tokens = []
     start = end = 0
+    non_space_re = re.compile(r"\S")
+    space_or_paren_re = re.compile(r"[\s(]")
+    paren_re = re.compile(r"[()]")
 
     while end < len(block):
-        m = re.compile(r"\S").search(block, end)
+        m = non_space_re.search(block, end)
         if not m:
             return tokens, end
 
         start = m.start()
 
         # Case 1: sexpr is not parenthesized.
-        if m.group() != "(":
-            m2 = re.compile(r"[\s(]").search(block, start)
+        if block[start] != "(":
+            m2 = space_or_paren_re.search(block, start)
             if m2:
                 end = m2.start()
             else:
@@ -772,7 +775,7 @@ def _parse_sexpr_block(block):
         # Case 2: parenthesized sexpr.
         else:
             nesting = 0
-            for m in re.compile(r"[()]").finditer(block, start):
+            for m in paren_re.finditer(block, start):
                 if m.group() == "(":
                     nesting += 1
                 else:
