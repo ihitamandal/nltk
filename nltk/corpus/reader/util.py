@@ -600,22 +600,15 @@ def read_line_block(stream):
 
 
 def read_blankline_block(stream):
-    s = ""
-    while True:
-        line = stream.readline()
-        # End of file:
-        if not line:
+    s = []
+    for line in stream:
+        if not line.strip():
             if s:
-                return [s]
-            else:
-                return []
-        # Blank line:
-        elif line and not line.strip():
-            if s:
-                return [s]
-        # Other line:
+                return ["".join(s)]
         else:
-            s += line
+            s.append(line)
+
+    return ["".join(s)] if s else []
 
 
 def read_alignedsent_block(stream):
