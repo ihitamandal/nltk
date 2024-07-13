@@ -48,7 +48,8 @@ from nltk.tree import ProbabilisticTree, Tree
 
 # Probabilistic edges
 class ProbabilisticLeafEdge(LeafEdge):
-    def prob(self):
+    @staticmethod
+    def prob():
         return 1.0
 
 
