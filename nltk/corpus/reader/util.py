@@ -599,23 +599,34 @@ def read_line_block(stream):
     return toks
 
 
-def read_blankline_block(stream):
-    s = ""
+def read_blankline_block(stream: object) -> list[str]:
+    """Read a block of text from stream until a blank line or end of file is encountered.
+
+    Parameters
+    ----------
+    stream : object
+        The input stream to read from.
+
+    Returns
+    -------
+    list of str
+        A list containing the block of text read from the stream.
+    """
+    lines = []
+    append_line = lines.append
+    join_lines = "".join  # Localize join method for micro-optimization
     while True:
         line = stream.readline()
-        # End of file:
-        if not line:
-            if s:
-                return [s]
+        if not line:  # End of file
+            if lines:
+                return [join_lines(lines)]
             else:
                 return []
-        # Blank line:
-        elif line and not line.strip():
-            if s:
-                return [s]
-        # Other line:
-        else:
-            s += line
+        elif not line.strip():  # Blank line
+            if lines:
+                return [join_lines(lines)]
+        else:  # Non-blank line
+            append_line(line)
 
 
 def read_alignedsent_block(stream):
