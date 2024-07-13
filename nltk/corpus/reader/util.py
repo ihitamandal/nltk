@@ -832,13 +832,14 @@ def find_corpus_fileids(root, regexp):
 
 
 def _path_from(parent, child):
-    if os.path.split(parent)[1] == "":
-        parent = os.path.split(parent)[0]
+    parent_head, parent_tail = os.path.split(parent)
+    if parent_tail == "":
+        parent = parent_head
     path = []
     while parent != child:
         child, dirname = os.path.split(child)
         path.insert(0, dirname)
-        assert os.path.split(child)[0] != child
+        assert child != os.path.dirname(child)
     return path
 
 
