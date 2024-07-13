@@ -191,11 +191,14 @@ def _rightmost_descendants(node):
     Returns the set of all nodes descended in some way through
     right branches from this node.
     """
+    descendants = []
     try:
-        rightmost_leaf = max(node.treepositions())
+        rightmost_leaf = node.treepositions()[-1]
+        for i in range(1, len(rightmost_leaf) + 1):
+            descendants.append(node[rightmost_leaf[:i]])
     except AttributeError:
         return []
-    return [node[rightmost_leaf[:i]] for i in range(1, len(rightmost_leaf) + 1)]
+    return descendants
 
 
 def _istree(obj):
