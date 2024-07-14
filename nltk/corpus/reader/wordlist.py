@@ -16,10 +16,13 @@ class WordListCorpusReader(CorpusReader):
     """
 
     def words(self, fileids=None, ignore_lines_startswith="\n"):
+        raw_text = self.raw(fileids)
+        tokenized_lines = line_tokenize(raw_text)
+        ignore_prefix_len = len(ignore_lines_startswith)
         return [
             line
-            for line in line_tokenize(self.raw(fileids))
-            if not line.startswith(ignore_lines_startswith)
+            for line in tokenized_lines
+            if not line[:ignore_prefix_len] == ignore_lines_startswith
         ]
 
 
