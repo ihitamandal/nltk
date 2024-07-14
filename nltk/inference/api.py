@@ -567,26 +567,38 @@ class ParallelProverBuilderCommand(BaseProverCommand, BaseModelBuilderCommand):
         return not self._run(verbose)
 
     def _run(self, verbose):
-        # Set up two thread, Prover and ModelBuilder to run in parallel
-        tp_thread = TheoremToolThread(
-            lambda: BaseProverCommand.prove(self, verbose), verbose, "TP"
-        )
-        mb_thread = TheoremToolThread(
-            lambda: BaseModelBuilderCommand.build_model(self, verbose), verbose, "MB"
-        )
+        # Create an event to signal completion
+        self._completion_event = threading.Event()
+
+        # Set up two threads, Prover and ModelBuilder to run in parallel
+        tp_thread = TheoremToolThread(self._prover_thread_fn, verbose, "TP")
+        mb_thread = TheoremToolThread(self._modelbuilder_thread_fn, verbose, "MB")
 
         tp_thread.start()
         mb_thread.start()
 
-        while tp_thread.is_alive() and mb_thread.is_alive():
-            # wait until either the prover or the model builder is done
-            pass
+        # Wait until either the prover or the model builder is done
+        tp_thread.join()
+        mb_thread.join()
 
         if tp_thread.result is not None:
             self._result = tp_thread.result
         elif mb_thread.result is not None:
             self._result = not mb_thread.result
+
         return self._result
+
+    def _prover_thread_fn(self, verbose):
+        result = BaseProverCommand.prove(self, verbose)
+        if result is not None:
+            self._completion_event.set()
+        return result
+
+    def _modelbuilder_thread_fn(self, verbose):
+        result = BaseModelBuilderCommand.build_model(self, verbose)
+        if result is not None:
+            self._completion_event.set()
+        return result
 
 
 class TheoremToolThread(threading.Thread):
