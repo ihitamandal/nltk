@@ -1364,7 +1364,8 @@ class BoxerEq(BoxerIndexed):
     def __iter__(self):
         return iter((self.var1, self.var2))
 
-    def _pred(self):
+    def _pred(self) -> str:
+        """Returns the predicate 'eq'."""
         return "eq"
 
 
