@@ -111,6 +111,7 @@ macro definitions to ``m`` and initialises ``l`` to an empty dictionary.
 
 import functools
 import re
+from typing import Any, Callable
 
 try:
     import pyparsing
@@ -379,20 +380,37 @@ def _tgrep_parens_action(_s, _l, tokens):
     return tokens[1]
 
 
-def _tgrep_nltk_tree_pos_action(_s, _l, tokens):
-    """
-    Builds a lambda function representing a predicate on a tree node
+def _tgrep_nltk_tree_pos_action(
+    _s: str, _l: str, tokens: list[str]
+) -> Callable[[Any], Callable[[Any, None, None], bool]]:
+    """Builds a lambda function representing a predicate on a tree node
     which returns true if the node is located at a specific tree
     position.
+
+    Parameters
+    ----------
+    _s : str
+        Unused string parameter
+    _l : str
+        Unused string parameter
+    tokens : list of str
+        A list of tokens containing the positional information
+
+    Returns
+    -------
+    Callable[[Any], Callable[[Any, None, None], bool]]
+        A function that takes a node and checks if its tree position matches the specified position.
     """
     # recover the tuple from the parsed string
-    node_tree_position = tuple(int(x) for x in tokens if x.isdigit())
-    # capture the node's tree position
-    return (
-        lambda i: lambda n, m=None, l=None: (
-            hasattr(n, "treeposition") and n.treeposition() == i
+    node_tree_position = tuple(map(int, filter(str.isdigit, tokens)))
+
+    # define the predicate function for tree position
+    def check_tree_position(node: Any, m: None = None, l: None = None) -> bool:
+        return (
+            hasattr(node, "treeposition") and node.treeposition() == node_tree_position
         )
-    )(node_tree_position)
+
+    return check_tree_position
 
 
 def _tgrep_relation_action(_s, _l, tokens):
