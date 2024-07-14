@@ -133,13 +133,16 @@ def split_resource_url(resource_url):
     ('file', '/C:/home/nltk')
     """
     protocol, path_ = resource_url.split(":", 1)
-    if protocol == "nltk":
-        pass
-    elif protocol == "file":
+
+    if protocol == "file":
         if path_.startswith("/"):
             path_ = "/" + path_.lstrip("/")
-    else:
-        path_ = re.sub(r"^/{0,2}", "", path_)
+    elif protocol != "nltk":
+        if path_.startswith("//"):
+            path_ = path_[2:]
+        elif path_.startswith("/"):
+            path_ = path_[1:]
+
     return protocol, path_
 
 
