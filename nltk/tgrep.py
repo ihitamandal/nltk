@@ -385,14 +385,12 @@ def _tgrep_nltk_tree_pos_action(_s, _l, tokens):
     which returns true if the node is located at a specific tree
     position.
     """
-    # recover the tuple from the parsed string
-    node_tree_position = tuple(int(x) for x in tokens if x.isdigit())
-    # capture the node's tree position
-    return (
-        lambda i: lambda n, m=None, l=None: (
-            hasattr(n, "treeposition") and n.treeposition() == i
-        )
-    )(node_tree_position)
+    node_tree_position = tuple(map(int, filter(str.isdigit, tokens)))
+
+    def predicate(n, m=None, l=None, position=node_tree_position):
+        return hasattr(n, "treeposition") and n.treeposition() == position
+
+    return predicate
 
 
 def _tgrep_relation_action(_s, _l, tokens):
