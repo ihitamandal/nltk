@@ -1230,12 +1230,15 @@ class BoxerNamed(BoxerIndexed):
         )
 
     def clean(self):
+        cleaned_name = self._clean_name(self.name)
+        if cleaned_name == self.name:
+            return self
         return BoxerNamed(
             self.discourse_id,
             self.sent_index,
             self.word_indices,
             self.var,
-            self._clean_name(self.name),
+            cleaned_name,
             self.type,
             self.sense,
         )
@@ -1253,6 +1256,39 @@ class BoxerNamed(BoxerIndexed):
 
     def __iter__(self):
         return iter((self.var, self.name, self.type, self.sense))
+
+    def _pred(self):
+        return "named"
+
+    def _variables(self):
+        return ({self.var}, set(), set())
+
+    def change_var(self, var):
+        if var == self.var:
+            return self
+        return BoxerNamed(
+            self.discourse_id,
+            self.sent_index,
+            self.word_indices,
+            var,
+            self.name,
+            self.type,
+            self.sense,
+        )
+
+    def renumber_sentences(self, f):
+        new_sent_index = f(self.sent_index)
+        if new_sent_index == self.sent_index:
+            return self
+        return BoxerNamed(
+            self.discourse_id,
+            new_sent_index,
+            self.word_indices,
+            self.var,
+            self.name,
+            self.type,
+            self.sense,
+        )
 
     def _pred(self):
         return "named"
