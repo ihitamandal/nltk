@@ -717,8 +717,7 @@ def _tgrep_node_label_use_action(_s, _l, tokens):
 
     It returns the node label.
     """
-    assert len(tokens) == 1
-    assert tokens[0].startswith("=")
+    assert len(tokens) == 1 and tokens[0][0] == "="
     return tokens[0][1:]
 
 
