@@ -1000,7 +1000,9 @@ class AbstractBoxerDrs:
         :return: (set<variables>, set<events>, set<propositions>)
         """
         variables, events, propositions = self._variables()
-        return (variables - (events | propositions), events, propositions - events)
+        difference_set = variables.difference(events, propositions)
+        propositions_difference_events = propositions.difference(events)
+        return (difference_set, events, propositions_difference_events)
 
     def variable_types(self):
         vartypes = {}
