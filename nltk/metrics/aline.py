@@ -36,6 +36,10 @@ Example usage
 [1] G. Kondrak. Algorithms for Language Reconstruction. PhD dissertation,
 University of Toronto.
 """
+from functools import lru_cache
+from typing import Sequence
+
+import numpy as np
 
 try:
     import numpy as np
@@ -1202,32 +1206,32 @@ def sigma_sub(p, q):
     return C_sub - delta(p, q) - V(p) - V(q)
 
 
-def sigma_exp(p, q):
+def sigma_exp(p: str, q: Sequence[str]) -> float:
+    """Calculate the score of an expansion/compression.
+
+    Args:
+        p (str): Input string `p`.
+        q (str): Sequence of characters for comparison.
+
+    Returns:
+        float: Expansion/compression score.
     """
-    Returns score of an expansion/compression.
-
-    (Kondrak 2002: 54)
-    """
-    q1 = q[0]
-    q2 = q[1]
-    return C_exp - delta(p, q1) - delta(p, q2) - V(p) - max(V(q1), V(q2))
+    return C_exp - delta(p, q[0]) - delta(p, q[1]) - V(p) - max(V(q[0]), V(q[1]))
 
 
-def delta(p, q):
-    """
-    Return weighted sum of difference between P and Q.
+@lru_cache(maxsize=128)
+def delta(p: str, q: str) -> float:
+    """Compute weighted sum of difference between `p` and `q`.
 
-    (Kondrak 2002: 54)
+    Args:
+        p (str): First input string.
+        q (str): Second input string.
+
+    Returns:
+        float: Weighted difference.
     """
     features = R(p, q)
-    total = 0
-    if np is not None:
-        return np.dot(
-            [diff(p, q, f) for f in features], [salience[f] for f in features]
-        )
-    for f in features:
-        total += diff(p, q, f) * salience[f]
-    return total
+    return np.dot([diff(p, q, f) for f in features], [salience[f] for f in features])
 
 
 def diff(p, q, f):
@@ -1251,15 +1255,16 @@ def R(p, q):
     return R_v
 
 
-def V(p):
-    """
-    Return vowel weight if P is vowel.
+def V(p: str) -> int:
+    """Return vowel weight if `p` is vowel.
 
-    (Kondrak 2002: 54)
+    Args:
+        p (str): Character to check.
+
+    Returns:
+        int: Vowel weight.
     """
-    if p in consonants:
-        return 0
-    return C_vwl
+    return C_vwl if p not in consonants else 0
 
 
 # === Test ===
