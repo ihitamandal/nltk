@@ -1203,7 +1203,8 @@ class BoxerPred(BoxerIndexed):
     def __iter__(self):
         return iter((self.var, self.name, self.pos, self.sense))
 
-    def _pred(self):
+    @staticmethod
+    def _pred():
         return "pred"
 
 
