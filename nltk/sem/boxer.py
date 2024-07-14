@@ -1189,19 +1189,25 @@ class BoxerPred(BoxerIndexed):
         )
 
     def renumber_sentences(self, f):
-        new_sent_index = f(self.sent_index)
-        return BoxerPred(
-            self.discourse_id,
-            new_sent_index,
-            self.word_indices,
-            self.var,
-            self.name,
-            self.pos,
-            self.sense,
-        )
+        self.sent_index = f(self.sent_index)
+        return self
 
     def __iter__(self):
         return iter((self.var, self.name, self.pos, self.sense))
+
+    def _pred(self):
+        return "pred"
+
+    def _variables(self):
+        return ({self.var}, set(), set())
+
+    def change_var(self, var):
+        self.var = var
+        return self
+
+    def clean(self):
+        self.name = self._clean_name(self.name)
+        return self
 
     def _pred(self):
         return "pred"
