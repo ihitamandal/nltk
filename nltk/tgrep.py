@@ -977,12 +977,7 @@ def treepositions_no_leaves(tree):
     leaf nodes.
     """
     treepositions = tree.treepositions()
-    # leaves are treeposition tuples that are not prefixes of any
-    # other treeposition
-    prefixes = set()
-    for pos in treepositions:
-        for length in range(len(pos)):
-            prefixes.add(pos[:length])
+    prefixes = {pos[:length] for pos in treepositions for length in range(len(pos))}
     return [pos for pos in treepositions if pos in prefixes]
 
 
