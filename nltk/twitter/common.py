@@ -47,7 +47,7 @@ def _add_field_to_out(json, field, out):
 
 
 def _is_composed_key(field):
-    return HIER_SEPARATOR in field
+    return "." in field
 
 
 def _get_key_value_composed(field):
