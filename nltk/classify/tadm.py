@@ -8,6 +8,8 @@
 import subprocess
 import sys
 
+import numpy as np
+
 from nltk.internals import find_binary
 
 try:
@@ -65,10 +67,7 @@ def parse_tadm_weights(paramfile):
     model, return a ``numpy`` array containing the corresponding weight
     vector.
     """
-    weights = []
-    for line in paramfile:
-        weights.append(float(line.strip()))
-    return numpy.array(weights, "d")
+    return np.fromiter((float(line.strip()) for line in paramfile), dtype="d")
 
 
 def call_tadm(args):
