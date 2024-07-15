@@ -379,31 +379,21 @@ class ARLSTem2(StemmerI):
         """
         stem the future tense co-occurred prefixes and suffixes
         """
-        if len(token) > 6:
+        t_len = len(token)
+        if t_len > 6:
             for s2 in self.pl_si2:
-                # ^Siin Taa
-                if token.startswith(self.verb_pr2[0]) and token.endswith(s2):
-                    return token[2:-2]
-            # ^Siin Yaa, Alif Noon$
-            if token.startswith(self.verb_pr2[1]) and token.endswith(self.pl_si2[0]):
-                return token[2:-2]
-            # ^Siin Yaa, Waaw Noon$
-            if token.startswith(self.verb_pr2[1]) and token.endswith(self.pl_si2[2]):
-                return token[2:-2]
-        # ^Siin Taa, Noon$
-        if (
-            len(token) > 5
-            and token.startswith(self.verb_pr2[0])
-            and token.endswith("\u0646")
-        ):
-            return token[2:-1]
-        # ^Siin Yaa, Noon$
-        if (
-            len(token) > 5
-            and token.startswith(self.verb_pr2[1])
-            and token.endswith("\u0646")
-        ):
-            return token[2:-1]
+                if token.startswith("ست") and token.endswith(s2):
+                    return token[2 : t_len - 2]
+            if token.startswith("سي"):
+                if token.endswith("ان"):
+                    return token[2 : t_len - 2]
+                elif token.endswith("ون"):
+                    return token[2 : t_len - 2]
+        if t_len > 5:
+            if token.startswith("ست") and token.endswith("ن"):
+                return token[2 : t_len - 1]
+            if token.startswith("سي") and token.endswith("ن"):
+                return token[2 : t_len - 1]
 
     def verb_t3(self, token):
         """
