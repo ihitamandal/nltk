@@ -1746,32 +1746,26 @@ class KneserNeyProbDist(ProbDistI):
 
         if trigram in self._cache:
             return self._cache[trigram]
+
+        # if the sample trigram was seen during training
+        if trigram in self._trigrams:
+            prob = (self._trigrams[trigram] - self._D) / self._bigrams[(w0, w1)]
+        elif (w0, w1) in self._bigrams and (w1, w2) in self._wordtypes_before:
+            aftr = self._wordtypes_after[(w0, w1)]
+            bfr = self._wordtypes_before[(w1, w2)]
+
+            # the probability left over from alphas
+            leftover_prob = (aftr * self._D) / self._bigrams[(w0, w1)]
+
+            # the beta (including normalization)
+            beta = bfr / (self._trigrams_contain[w1] - aftr)
+
+            prob = leftover_prob * beta
         else:
-            # if the sample trigram was seen during training
-            if trigram in self._trigrams:
-                prob = (self._trigrams[trigram] - self.discount()) / self._bigrams[
-                    (w0, w1)
-                ]
+            prob = 0.0
 
-            # else if the 'rougher' environment was seen during training
-            elif (w0, w1) in self._bigrams and (w1, w2) in self._wordtypes_before:
-                aftr = self._wordtypes_after[(w0, w1)]
-                bfr = self._wordtypes_before[(w1, w2)]
-
-                # the probability left over from alphas
-                leftover_prob = (aftr * self.discount()) / self._bigrams[(w0, w1)]
-
-                # the beta (including normalization)
-                beta = bfr / (self._trigrams_contain[w1] - aftr)
-
-                prob = leftover_prob * beta
-
-            # else the sample was completely unseen during training
-            else:
-                prob = 0.0
-
-            self._cache[trigram] = prob
-            return prob
+        self._cache[trigram] = prob
+        return prob
 
     def discount(self):
         """
