@@ -2393,11 +2393,17 @@ class ProbabilisticMixIn:
 
         :rtype: float
         """
-        if self.__logprob is None:
-            if self.__prob is None:
-                return None
-            self.__logprob = math.log(self.__prob, 2)
+        if self.__logprob is None and self.__prob is not None:
+            self.__logprob = math.log2(self.__prob)
         return self.__logprob
+
+    def set_prob(self, prob):
+        self.__prob = prob
+        self.__logprob = None
+
+    def set_logprob(self, logprob):
+        self.__logprob = logprob
+        self.__prob = 2**logprob
 
 
 class ImmutableProbabilisticMixIn(ProbabilisticMixIn):
