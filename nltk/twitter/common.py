@@ -51,11 +51,11 @@ def _is_composed_key(field):
 
 
 def _get_key_value_composed(field):
-    out = field.split(HIER_SEPARATOR)
-    # there could be up to 3 levels
-    key = out[0]
-    value = HIER_SEPARATOR.join(out[1:])
-    return key, value
+    split_idx = field.find(HIER_SEPARATOR)
+    # Split only once up to the first occurrence of HIER_SEPARATOR
+    if split_idx == -1:
+        return field, ""
+    return field[:split_idx], field[split_idx + len(HIER_SEPARATOR) :]
 
 
 def _get_entity_recursive(json, entity):
@@ -217,18 +217,19 @@ def json2csv_entities(
 
 def get_header_field_list(main_fields, entity_type, entity_fields):
     if _is_composed_key(entity_type):
-        key, value = _get_key_value_composed(entity_type)
-        main_entity = key
-        sub_entity = value
+        main_entity, sub_entity = _get_key_value_composed(entity_type)
     else:
-        main_entity = None
-        sub_entity = entity_type
+        main_entity, sub_entity = None, entity_type
 
     if main_entity:
-        output1 = [HIER_SEPARATOR.join([main_entity, x]) for x in main_fields]
+        main_entity_prefix = main_entity + HIER_SEPARATOR
+        output1 = [main_entity_prefix + x for x in main_fields]
     else:
         output1 = main_fields
-    output2 = [HIER_SEPARATOR.join([sub_entity, x]) for x in entity_fields]
+
+    sub_entity_prefix = sub_entity + HIER_SEPARATOR
+    output2 = [sub_entity_prefix + x for x in entity_fields]
+
     return output1 + output2
 
 
