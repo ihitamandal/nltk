@@ -462,10 +462,10 @@ class FreqDist(Counter):
         :type maxlen: int
         :rtype: string
         """
-        items = ["{!r}: {!r}".format(*item) for item in self.most_common(maxlen)]
+        items = [f"{repr(item[0])}: {item[1]}" for item in self.most_common(maxlen)]
         if len(self) > maxlen:
             items.append("...")
-        return "FreqDist({{{0}}})".format(", ".join(items))
+        return f"FreqDist({{{', '.join(items)}}})"
 
     def __str__(self):
         """
@@ -483,6 +483,14 @@ class FreqDist(Counter):
         """
         for token, _ in self.most_common(self.B()):
             yield token
+
+    def N(self):
+        if self._N is None:
+            self._N = sum(self.values())
+        return self._N
+
+    def B(self):
+        return len(self)
 
 
 ##//////////////////////////////////////////////////////
