@@ -1613,7 +1613,7 @@ class MutableProbDist(ProbDistI):
 
     def max(self):
         # inherit documentation
-        return max((p, v) for (v, p) in self._sample_dict.items())[1]
+        return max(self._sample_dict, key=self._sample_dict.get)
 
     def samples(self):
         # inherit documentation
