@@ -125,29 +125,31 @@ class CCGLexicon:
         return string
 
 
-# -----------
-# Parsing lexicons
-# -----------
-
-
 def matchBrackets(string):
     """
     Separate the contents matching the first set of brackets from the rest of
     the input.
     """
-    rest = string[1:]
-    inside = "("
 
-    while rest != "" and not rest.startswith(")"):
-        if rest.startswith("("):
-            (part, rest) = matchBrackets(rest)
-            inside = inside + part
-        else:
-            inside = inside + rest[0]
-            rest = rest[1:]
-    if rest.startswith(")"):
-        return (inside + ")", rest[1:])
-    raise AssertionError("Unmatched bracket in string '" + string + "'")
+    def helper(string, start):
+        inside = "("
+        i = start + 1
+
+        while i < len(string) and string[i] != ")":
+            if string[i] == "(":
+                part, i = helper(string, i)
+                inside += part
+            else:
+                inside += string[i]
+                i += 1
+
+        if i < len(string) and string[i] == ")":
+            return inside + ")", i + 1
+
+        raise AssertionError("Unmatched bracket in string '" + string + "'")
+
+    inside, remaining_index = helper(string, 0)
+    return inside, string[remaining_index:]
 
 
 def nextCategory(string):
