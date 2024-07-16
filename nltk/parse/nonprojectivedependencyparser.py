@@ -352,19 +352,24 @@ class ProbabilisticNonprojectiveParser:
         :param new_indexes: A list of node addresses to check for
             subsumed nodes.
         """
-        swapped = True
-        while swapped:
-            originals = []
+        while True:
+            originals_set = set()
+            originals_list = []
             swapped = False
             for new_index in new_indexes:
                 if new_index in self.inner_nodes:
                     for old_val in self.inner_nodes[new_index]:
-                        if old_val not in originals:
-                            originals.append(old_val)
+                        if old_val not in originals_set:
+                            originals_set.add(old_val)
+                            originals_list.append(old_val)
                             swapped = True
                 else:
-                    originals.append(new_index)
-            new_indexes = originals
+                    if new_index not in originals_set:
+                        originals_set.add(new_index)
+                        originals_list.append(new_index)
+            if not swapped:
+                break
+            new_indexes = originals_list
         return new_indexes
 
     def compute_max_subtract_score(self, column_index, cycle_indexes):
