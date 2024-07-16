@@ -124,9 +124,11 @@ class CCGLexicon:
                 string = string + "%s" % cat
         return string
 
+
 # -----------
 # Parsing lexicons
 # -----------
+
 
 def matchBrackets(string):
     """
