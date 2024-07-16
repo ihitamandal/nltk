@@ -82,9 +82,21 @@ class NPSChatCorpusReader(XMLCorpusReader):
         return tagged_post
 
     @staticmethod
-    def _simplify_username(word):
+    def _simplify_username(word: str | bytes) -> str:
+        """Simplify the username by replacing 'User' with 'U' and decoding bytes if necessary.
+
+        Parameters
+        ----------
+        word : str or bytes
+            The username to simplify.
+
+        Returns
+        -------
+        str
+            The simplified username.
+        """
         if "User" in word:
-            word = "U" + word.split("User", 1)[1]
-        elif isinstance(word, bytes):
-            word = word.decode("ascii")
+            return f"U{word[4:]}"
+        if isinstance(word, bytes):
+            return word.decode("ascii")
         return word
