@@ -352,20 +352,18 @@ class ProbabilisticNonprojectiveParser:
         :param new_indexes: A list of node addresses to check for
             subsumed nodes.
         """
-        swapped = True
-        while swapped:
-            originals = []
-            swapped = False
-            for new_index in new_indexes:
-                if new_index in self.inner_nodes:
-                    for old_val in self.inner_nodes[new_index]:
-                        if old_val not in originals:
-                            originals.append(old_val)
-                            swapped = True
-                else:
-                    originals.append(new_index)
-            new_indexes = originals
-        return new_indexes
+        originals = set()
+        queue = new_indexes[:]
+        while queue:
+            new_index = queue.pop()
+            if new_index in self.inner_nodes:
+                for old_val in self.inner_nodes[new_index]:
+                    if old_val not in originals:
+                        originals.add(old_val)
+                        queue.append(old_val)
+            else:
+                originals.add(new_index)
+        return list(originals)
 
     def compute_max_subtract_score(self, column_index, cycle_indexes):
         """
@@ -396,24 +394,25 @@ class ProbabilisticNonprojectiveParser:
         :param node_index: The address of the 'destination' node,
             the node that is arced to.
         """
-        originals = self.compute_original_indexes([node_index])
+        originals = set(
+            self.compute_original_indexes([node_index])
+        )  # Use a set for fast membership testing
         logger.debug("originals: %s", originals)
 
         max_arc = None
-        max_score = None
-        for row_index in range(len(self.scores)):
-            for col_index in range(len(self.scores[row_index])):
-                if col_index in originals and (
-                    max_score is None or self.scores[row_index][col_index] > max_score
-                ):
-                    max_score = self.scores[row_index][col_index]
+        max_score = float("-inf")  # Use negative infinity as initial score
+
+        for row_index, row in enumerate(self.scores):
+            for col_index in originals:
+                score = row[col_index]
+                if score > max_score:
+                    max_score = score
                     max_arc = row_index
                     logger.debug("%s, %s", row_index, col_index)
 
         logger.debug(max_score)
 
-        for key in self.inner_nodes:
-            replaced_nodes = self.inner_nodes[key]
+        for key, replaced_nodes in self.inner_nodes.items():
             if max_arc in replaced_nodes:
                 return key
 
