@@ -64,6 +64,7 @@ from urllib.parse import unquote_plus
 
 from nltk.corpus import wordnet as wn
 from nltk.corpus.reader.wordnet import Lemma, Synset
+from typing import final
 
 firstClient = True
 
@@ -476,11 +477,22 @@ synsets.</li>
 <hr width='100%'>
 """
 
-# HTML oriented functions
 
+@final
+def _bold(txt: str) -> str:
+    """Wraps the given text in HTML bold tags.
 
-def _bold(txt):
-    return "<b>%s</b>" % txt
+    Parameters
+    ----------
+    txt : str
+        The text to be wrapped.
+
+    Returns
+    -------
+    str
+        The text wrapped in HTML bold tags.
+    """
+    return f"<b>{txt}</b>"
 
 
 def _center(txt):
