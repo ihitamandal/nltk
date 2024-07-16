@@ -899,11 +899,21 @@ synsets.</li>
 """
 
 
-def get_static_index_page(with_shutdown):
+def get_static_index_page(with_shutdown: bool) -> str:
+    """Get the static index page.
+
+    Parameters
+    ----------
+    with_shutdown : bool
+        A flag indicating whether to use the shutdown HTML or not.
+
+    Returns
+    -------
+    str
+        The filled HTML template.
     """
-    Get the static index page.
-    """
-    template = """
+    upper_link = "upper.html" if with_shutdown else "upper_2.html"
+    template: str = f"""
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN"  "http://www.w3.org/TR/html4/frameset.dtd">
 <HTML>
      <!-- Natural Language Toolkit: Wordnet Interface: Graphical Wordnet Browser
@@ -915,18 +925,13 @@ def get_static_index_page(with_shutdown):
          <TITLE>NLTK Wordnet Browser</TITLE>
      </HEAD>
 
-<frameset rows="7%%,93%%">
-    <frame src="%s" name="header">
+<frameset rows="7%,93%">
+    <frame src="{upper_link}" name="header">
     <frame src="start_page" name="body">
 </frameset>
 </HTML>
 """
-    if with_shutdown:
-        upper_link = "upper.html"
-    else:
-        upper_link = "upper_2.html"
-
-    return template % upper_link
+    return template
 
 
 def get_static_upper_page(with_shutdown):
