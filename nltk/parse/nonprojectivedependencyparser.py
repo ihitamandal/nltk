@@ -354,17 +354,20 @@ class ProbabilisticNonprojectiveParser:
         """
         swapped = True
         while swapped:
-            originals = []
+            originals = set()
             swapped = False
+
             for new_index in new_indexes:
                 if new_index in self.inner_nodes:
                     for old_val in self.inner_nodes[new_index]:
                         if old_val not in originals:
-                            originals.append(old_val)
+                            originals.add(old_val)
                             swapped = True
                 else:
-                    originals.append(new_index)
-            new_indexes = originals
+                    originals.add(new_index)
+
+            new_indexes = list(originals)
+
         return new_indexes
 
     def compute_max_subtract_score(self, column_index, cycle_indexes):
@@ -421,17 +424,25 @@ class ProbabilisticNonprojectiveParser:
 
     def original_best_arc(self, node_index):
         originals = self.compute_original_indexes([node_index])
-        max_arc = None
-        max_score = None
-        max_orig = None
-        for row_index in range(len(self.scores)):
-            for col_index in range(len(self.scores[row_index])):
-                if col_index in originals and (
-                    max_score is None or self.scores[row_index][col_index] > max_score
+        originals_set = set(
+            originals
+        )  # Use a set for O(1) average time complexity on lookups.
+
+        max_arc, max_score, max_orig = None, None, None
+
+        num_rows = len(self.scores)
+        for row_index in range(num_rows):
+            row_scores = self.scores[row_index]
+            num_cols = len(row_scores)
+
+            for col_index in range(num_cols):
+                if col_index in originals_set and (
+                    max_score is None or row_scores[col_index] > max_score
                 ):
-                    max_score = self.scores[row_index][col_index]
+                    max_score = row_scores[col_index]
                     max_arc = row_index
                     max_orig = col_index
+
         return [max_arc, max_orig]
 
     def parse(self, tokens, tags):
