@@ -82,13 +82,35 @@ def windowdiff(seg1, seg2, k, boundary="1", weighted=False):
         raise ValueError(
             "Window width k should be smaller or equal than segmentation lengths"
         )
+
     wd = 0
-    for i in range(len(seg1) - k + 1):
-        ndiff = abs(seg1[i : i + k].count(boundary) - seg2[i : i + k].count(boundary))
+    count1 = seg1[:k].count(boundary)
+    count2 = seg2[:k].count(boundary)
+
+    for i in range(len(seg1) - k):
+        ndiff = abs(count1 - count2)
         if weighted:
             wd += ndiff
         else:
             wd += min(1, ndiff)
+
+        # Update counts for the next window position
+        if seg1[i] == boundary:
+            count1 -= 1
+        if seg1[i + k] == boundary:
+            count1 += 1
+        if seg2[i] == boundary:
+            count2 -= 1
+        if seg2[i + k] == boundary:
+            count2 += 1
+
+    # Account for the last window position
+    ndiff = abs(count1 - count2)
+    if weighted:
+        wd += ndiff
+    else:
+        wd += min(1, ndiff)
+
     return wd / (len(seg1) - k + 1.0)
 
 
