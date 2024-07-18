@@ -136,17 +136,25 @@ def matchBrackets(string):
     the input.
     """
     rest = string[1:]
-    inside = "("
+    inside = ["("]
+    i = 0
+    length = len(rest)
 
-    while rest != "" and not rest.startswith(")"):
-        if rest.startswith("("):
-            (part, rest) = matchBrackets(rest)
-            inside = inside + part
+    while i < length and rest[i] != ")":
+        if rest[i] == "(":
+            (part, new_rest) = matchBrackets(rest[i:])
+            inside.append(part)
+            rest = new_rest
+            length = len(rest)
+            i = -1
         else:
-            inside = inside + rest[0]
-            rest = rest[1:]
-    if rest.startswith(")"):
-        return (inside + ")", rest[1:])
+            inside.append(rest[i])
+        i += 1
+
+    if i < length and rest[i] == ")":
+        inside.append(")")
+        return ("".join(inside), rest[i + 1 :])
+
     raise AssertionError("Unmatched bracket in string '" + string + "'")
 
 
