@@ -476,10 +476,9 @@ class Synset(_WordNetObject):
         return self._lexname
 
     def _needs_root(self):
-        if self._pos == NOUN and self._wordnet_corpus_reader.get_version() != "1.6":
-            return False
-        else:
-            return True
+        return not (
+            self._pos == NOUN and self._wordnet_corpus_reader.get_version() != "1.6"
+        )
 
     def lemma_names(self, lang="eng"):
         """Return all the lemma_names associated with the synset"""
@@ -820,25 +819,25 @@ class Synset(_WordNetObject):
         :return: The number of edges in the shortest path connecting the two
             nodes, or None if no path exists.
         """
-
         if self == other:
             return 0
 
+        # Compute the hypernym paths for both synsets
         dist_dict1 = self._shortest_hypernym_paths(simulate_root)
         dist_dict2 = other._shortest_hypernym_paths(simulate_root)
 
-        # For each ancestor synset common to both subject synsets, find the
-        # connecting path length. Return the shortest of these.
+        # Use set intersection to find common ancestors
+        common_ancestors = set(dist_dict1.keys()).intersection(dist_dict2.keys())
 
-        inf = float("inf")
-        path_distance = inf
-        for synset, d1 in dist_dict1.items():
-            d2 = dist_dict2.get(synset, inf)
-            path_distance = min(path_distance, d1 + d2)
+        if not common_ancestors:
+            return None
 
-        return None if math.isinf(path_distance) else path_distance
+        # Calculate the shortest path distance
+        path_distance = min(
+            dist_dict1[synset] + dist_dict2[synset] for synset in common_ancestors
+        )
+        return path_distance
 
-    # interface to similarity methods
     def path_similarity(self, other, verbose=False, simulate_root=True):
         """
         Path Distance Similarity:
@@ -865,14 +864,14 @@ class Synset(_WordNetObject):
             could be found. 1 is returned if a ``Synset`` is compared with
             itself.
         """
+        if self == other:
+            return 1.0
 
-        distance = self.shortest_path_distance(
-            other,
-            simulate_root=simulate_root and (self._needs_root() or other._needs_root()),
+        simulate_root_flag = simulate_root and (
+            self._needs_root() or other._needs_root()
         )
-        if distance is None or distance < 0:
-            return None
-        return 1.0 / (distance + 1)
+        distance = self.shortest_path_distance(other, simulate_root=simulate_root_flag)
+        return 1.0 / (distance + 1) if distance is not None and distance >= 0 else None
 
     def lch_similarity(self, other, verbose=False, simulate_root=True):
         """
@@ -2391,21 +2390,38 @@ class WordNetICCorpusReader(CorpusReader):
         return ic
 
 
-######################################################################
-# Similarity metrics
-######################################################################
+def path_similarity(self, other, verbose=False, simulate_root=True):
+    """
+    Path Distance Similarity:
+    Return a score denoting how similar two word senses are, based on the
+    shortest path that connects the senses in the is-a (hypernym/hypnoym)
+    taxonomy. The score is in the range 0 to 1, except in those cases where
+    a path cannot be found (will only be true for verbs as there are many
+    distinct verb taxonomies), in which case None is returned. A score of
+    1 represents identity i.e. comparing a sense with itself will return 1.
 
-# TODO: Add in the option to manually add a new root node; this will be
-# useful for verb similarity as there exist multiple verb taxonomies.
+    :type other: Synset
+    :param other: The ``Synset`` that this ``Synset`` is being compared to.
+    :type simulate_root: bool
+    :param simulate_root: The various verb taxonomies do not
+        share a single root which disallows this metric from working for
+        synsets that are not connected. This flag (True by default)
+        creates a fake root that connects all the taxonomies. Set it
+        to false to disable this behavior. For the noun taxonomy,
+        there is usually a default root except for WordNet version 1.6.
+        If you are using wordnet 1.6, a fake root will be added for nouns
+        as well.
+    :return: A score denoting the similarity of the two ``Synset`` objects,
+        normally between 0 and 1. None is returned if no connecting path
+        could be found. 1 is returned if a ``Synset`` is compared with
+        itself.
+    """
+    if self == other:
+        return 1.0
 
-# More information about the metrics is available at
-# http://marimba.d.umn.edu/similarity/measures.html
-
-
-def path_similarity(synset1, synset2, verbose=False, simulate_root=True):
-    return synset1.path_similarity(
-        synset2, verbose=verbose, simulate_root=simulate_root
-    )
+    simulate_root_flag = simulate_root and (self._needs_root() or other._needs_root())
+    distance = self.shortest_path_distance(other, simulate_root=simulate_root_flag)
+    return 1.0 / (distance + 1) if distance is not None and distance >= 0 else None
 
 
 def lch_similarity(synset1, synset2, verbose=False, simulate_root=True):
