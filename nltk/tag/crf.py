@@ -12,6 +12,8 @@ A module for POS tagging using CRFSuite
 import re
 import unicodedata
 
+import pycrfsuite
+
 from nltk.tag.api import TaggerI
 
 try:
@@ -109,30 +111,30 @@ class CRFTagger(TaggerI):
         """
         token = tokens[idx]
 
-        feature_list = []
-
         if not token:
-            return feature_list
+            return []
+
+        feature_list = []
 
         # Capitalization
         if token[0].isupper():
             feature_list.append("CAPITALIZATION")
 
         # Number
-        if re.search(self._pattern, token) is not None:
+        if self._pattern.search(token):
             feature_list.append("HAS_NUM")
 
         # Punctuation
-        punc_cat = {"Pc", "Pd", "Ps", "Pe", "Pi", "Pf", "Po"}
-        if all(unicodedata.category(x) in punc_cat for x in token):
+        if all(unicodedata.category(x).startswith("P") for x in token):
             feature_list.append("PUNCTUATION")
 
         # Suffix up to length 3
-        if len(token) > 1:
+        token_len = len(token)
+        if token_len > 1:
             feature_list.append("SUF_" + token[-1:])
-        if len(token) > 2:
+        if token_len > 2:
             feature_list.append("SUF_" + token[-2:])
-        if len(token) > 3:
+        if token_len > 3:
             feature_list.append("SUF_" + token[-3:])
 
         feature_list.append("WORD_" + token)
