@@ -50,12 +50,23 @@ def _is_composed_key(field):
     return HIER_SEPARATOR in field
 
 
-def _get_key_value_composed(field):
-    out = field.split(HIER_SEPARATOR)
-    # there could be up to 3 levels
-    key = out[0]
-    value = HIER_SEPARATOR.join(out[1:])
-    return key, value
+def _get_key_value_composed(field: str) -> tuple[str, str]:
+    """Splits a field into key and value based on the hierarchy separator.
+
+    Parameters
+    ----------
+    field : str
+        The input string containing the hierarchical key-value pair.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the key and value. The key is the first part, and the value is the joined rest.
+    """
+    parts = field.split(HIER_SEPARATOR, 1)
+    key_part = parts[0]
+    value_part = parts[1] if len(parts) > 1 else ""
+    return key_part, value_part
 
 
 def _get_entity_recursive(json, entity):
