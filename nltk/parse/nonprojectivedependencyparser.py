@@ -185,8 +185,10 @@ class DemoScorer(DependencyScorerI):
         print("Training...")
 
     def score(self, graph):
-        # scores for Keith Hall 'K-best Spanning Tree Parsing' paper
-        return [
+        return self._score
+
+    def __init__(self):
+        self._score = [
             [[], [5], [1], [1]],
             [[], [], [11], [4]],
             [[], [10], [], [5]],
