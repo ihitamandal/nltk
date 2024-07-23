@@ -427,10 +427,8 @@ class ARLSTem2(StemmerI):
         stem the present tense prefixes
         """
         if len(token) > 3:
-            for pr1 in self.verb_suf1:
-                if token.startswith(pr1):
-                    return token[1:]
-            if token.startswith("\u064A"):
+            # Using set for faster membership check
+            if token[0] in self.verb_suf1 or token.startswith("\u064A"):
                 return token[1:]
 
     def verb_t5(self, token):
