@@ -2139,6 +2139,49 @@ class ConditionalFreqDist(defaultdict):
         """
         return "<ConditionalFreqDist with %d conditions>" % len(self)
 
+    def __init__(self, samples=None):
+        dict.__init__(self)
+        self._n = 0
+        if samples:
+            self.update(samples)
+
+    def __getitem__(self, item):
+        return self.get(item, 0)
+
+    def update(self, samples):
+        for sample in samples:
+            self[sample] += 1
+            self._n += 1
+
+    def N(self):
+        return self._n
+
+    def __add__(self, other):
+        result = FreqDist(self)
+        for sample, count in other.items():
+            result[sample] += count
+        return result
+
+    def __sub__(self, other):
+        result = FreqDist(self)
+        for sample, count in other.items():
+            result[sample] -= count
+            if result[sample] <= 0:
+                del result[sample]
+        return result
+
+    def __or__(self, other):
+        result = FreqDist()
+        for sample in set(self) | set(other):
+            result[sample] = max(self[sample], other[sample])
+        return result
+
+    def __and__(self, other):
+        result = FreqDist()
+        for sample in set(self) & set(other):
+            result[sample] = min(self[sample], other[sample])
+        return result
+
 
 class ConditionalProbDistI(dict, metaclass=ABCMeta):
     """
