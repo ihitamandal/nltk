@@ -163,7 +163,7 @@ class FreqDist(Counter):
 
         :rtype: list
         """
-        return [item for item in self if self[item] == 1]
+        return [item for item, count in self.items() if count == 1]
 
     def Nr(self, r, bins=None):
         return self.r_Nr(bins)[r]
