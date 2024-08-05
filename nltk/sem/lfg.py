@@ -96,40 +96,29 @@ class FStructure(dict):
 
     @staticmethod
     def _read_depgraph(node, depgraph, label_counter=None, parent=None):
-        if not label_counter:
-            label_counter = Counter()
-
+        label_counter = label_counter if label_counter else Counter()
         if node["rel"].lower() in ["spec", "punct"]:
-            # the value of a 'spec' entry is a word, not an FStructure
             return (node["word"], node["tag"])
 
-        else:
-            fstruct = FStructure()
-            fstruct.pred = None
-            fstruct.label = FStructure._make_label(label_counter.get())
+        fstruct = FStructure()
+        fstruct.label = FStructure._make_label(label_counter.get())
+        fstruct.parent = parent
 
-            fstruct.parent = parent
+        word, tag = node["word"], node["tag"]
+        if tag.startswith("VB") and tag.startswith("D", 2):
+            fstruct.safeappend("tense", ("PAST", "tense"))
 
-            word, tag = node["word"], node["tag"]
-            if tag[:2] == "VB":
-                if tag[2:3] == "D":
-                    fstruct.safeappend("tense", ("PAST", "tense"))
-                fstruct.pred = (word, tag[:2])
+        fstruct.pred = (word, tag[:2]) if tag.startswith("VB") else (word, tag)
 
-            if not fstruct.pred:
-                fstruct.pred = (word, tag)
+        for child in (
+            depgraph.nodes[idx] for idx in chain.from_iterable(node["deps"].values())
+        ):
+            fstruct.safeappend(
+                child["rel"],
+                FStructure._read_depgraph(child, depgraph, label_counter, fstruct),
+            )
 
-            children = [
-                depgraph.nodes[idx]
-                for idx in chain.from_iterable(node["deps"].values())
-            ]
-            for child in children:
-                fstruct.safeappend(
-                    child["rel"],
-                    FStructure._read_depgraph(child, depgraph, label_counter, fstruct),
-                )
-
-            return fstruct
+        return fstruct
 
     @staticmethod
     def _make_label(value):
@@ -209,6 +198,110 @@ class FStructure(dict):
                 else:  # ERROR
                     raise Exception(
                         "feature %s is not an FStruct, a list, or a tuple" % feature
+                    )
+        return accum + "]"
+
+    def get(self):
+        self._value += 1
+        return self._value
+
+    def __init__(self):
+        super().__init__()
+        self.pred = None
+        self.parent = None
+
+    def safeappend(self, key, item):
+        """
+        Append 'item' to the list at 'key'. If no list exists for 'key', then
+        construct one.
+        """
+        self.setdefault(key, []).append(item)
+
+    def to_depgraph(self):
+        from nltk.parse.dependencygraph import DependencyGraph
+
+        depgraph = DependencyGraph()
+        nodes = depgraph.nodes
+
+        self._to_depgraph(nodes, 0, "ROOT")
+
+        for node in nodes.values():
+            for n2 in [
+                n
+                for n in nodes.values()
+                if n["rel"] != "TOP" and n["head"] == node["address"]
+            ]:
+                node["deps"].setdefault(n2["rel"], []).append(n2["address"])
+
+        depgraph.root = nodes[1] if 1 in nodes else None
+        return depgraph
+
+    def _to_depgraph(self, nodes, head, rel):
+        index = len(nodes)
+        nodes[index] = {
+            "address": index,
+            "word": self.pred[0],
+            "tag": self.pred[1],
+            "head": head,
+            "rel": rel,
+            "deps": {},
+        }
+
+        for feature, items in sorted(self.items()):
+            for item in sorted(items):
+                if isinstance(item, FStructure):
+                    item._to_depgraph(nodes, index, feature)
+                elif isinstance(item, tuple):
+                    nodes[len(nodes)] = {
+                        "address": len(nodes),
+                        "word": item[0],
+                        "tag": item[1],
+                        "head": index,
+                        "rel": feature,
+                        "deps": {},
+                    }
+                elif isinstance(item, list):
+                    for n in item:
+                        n._to_depgraph(nodes, index, feature)
+                else:
+                    raise Exception(
+                        f"feature {feature} is not an FStruct, a list, or a tuple"
+                    )
+
+    @staticmethod
+    def read_depgraph(depgraph):
+        return FStructure._read_depgraph(depgraph.root, depgraph)
+
+    @staticmethod
+    def _make_label(value):
+        """
+        Pick an alphabetic character as identifier for an entity in the model.
+
+        :param value: where to index into the list of characters
+        :type value: int
+        """
+        letter = "fghijklmnopqrstuvwxyzabcde"[value - 1]
+        num = value // 26
+        return letter + str(num) if num > 0 else letter
+
+    def pretty_format(self, indent=3):
+        accum = f"{self.label}:[" if hasattr(self, "label") else "["
+        accum += f"pred '{self.pred[0]}'" if hasattr(self, "pred") else ""
+
+        for feature, items in sorted(self.items()):
+            for item in items:
+                if isinstance(item, FStructure):
+                    accum += f"\n{' ' * indent}{feature} {item.pretty_format(indent + len(feature) + 3 + len(self.label))}"
+                elif isinstance(item, tuple):
+                    accum += f"\n{' ' * indent}{feature} '{item[0]}'"
+                elif isinstance(item, list):
+                    items_str = "\n".join(
+                        f"{' ' * (indent + len(feature) + 2)}{i}" for i in item
+                    )
+                    accum += f"\n{' ' * indent}{feature} {{{items_str}}}"
+                else:
+                    raise Exception(
+                        f"feature {feature} is not an FStruct, a list, or a tuple"
                     )
         return accum + "]"
 
