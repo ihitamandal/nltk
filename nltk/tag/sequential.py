@@ -556,7 +556,7 @@ class RegexpTagger(SequentialBackoffTagger):
 
     def choose_tag(self, tokens, index, history):
         for regexp, tag in self._regexps:
-            if re.match(regexp, tokens[index]):
+            if regexp.match(tokens[index]):
                 return tag
         return None
 
