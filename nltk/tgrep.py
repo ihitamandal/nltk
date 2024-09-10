@@ -649,16 +649,12 @@ def _tgrep_conjunction_action(_s, _l, tokens, join_char="&"):
     list of segmented patterns (`tgrep_expr_labeled`, processed by
     `_tgrep_segmented_pattern_action`).
     """
-    # filter out the ampersand
-    tokens = [x for x in tokens if x != join_char]
-    if len(tokens) == 1:
+    if len(tokens) == 1 and tokens[0] != join_char:
         return tokens[0]
     else:
-        return (
-            lambda ts: lambda n, m=None, l=None: all(
-                predicate(n, m, l) for predicate in ts
-            )
-        )(tokens)
+        return lambda n, m=None, l=None: all(
+            predicate(n, m, l) for predicate in tokens if predicate != join_char
+        )
 
 
 def _tgrep_segmented_pattern_action(_s, _l, tokens):
