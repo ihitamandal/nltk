@@ -172,12 +172,11 @@ class MyServerHandler(BaseHTTPRequestHandler):
 
 def get_unique_counter_from_url(sp):
     """
-    Extract the unique counter from the URL if it has one.  Otherwise return
+    Extract the unique counter from the URL if it has one. Otherwise return
     null.
     """
-    pos = sp.rfind("%23")
-    if pos != -1:
-        return int(sp[(pos + 3) :])
+    if "%23" in sp:
+        return int(sp.split("%23")[-1])
     else:
         return None
 
