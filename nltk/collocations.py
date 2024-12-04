@@ -42,6 +42,7 @@ from nltk.metrics import (
 from nltk.metrics.spearman import ranks_from_scores, spearman_correlation
 from nltk.probability import FreqDist
 from nltk.util import ngrams
+from typing import Any, Iterable, Iterator, Optional
 
 
 class AbstractCollocationFinder:
@@ -60,22 +61,39 @@ class AbstractCollocationFinder:
         self.N = word_fd.N()
         self.ngram_fd = ngram_fd
 
-    @classmethod
+    @staticmethod
     def _build_new_documents(
-        cls, documents, window_size, pad_left=False, pad_right=False, pad_symbol=None
-    ):
-        """
-        Pad the document with the place holder according to the window_size
+        documents: Iterable[Iterable[Any]],
+        window_size: int,
+        pad_left: bool = False,
+        pad_right: bool = False,
+        pad_symbol: Optional[Any] = None,
+    ) -> Iterator[Any]:
+        """Pad the document with the placeholder according to the window_size.
+
+        Parameters
+        ----------
+        documents : Iterable[Iterable[Any]]
+            The input documents to pad.
+        window_size : int
+            Size of the window for padding.
+        pad_left : bool
+            Whether to pad to the left.
+        pad_right : bool
+            Whether to pad to the right.
+        pad_symbol : Optional[Any]
+            The symbol to use for padding.
+
+        Returns
+        -------
+        Iterator[Any]
+            An iterator over the padded documents.
         """
         padding = (pad_symbol,) * (window_size - 1)
         if pad_right:
-            return _itertools.chain.from_iterable(
-                _itertools.chain(doc, padding) for doc in documents
-            )
+            return (_itertools.chain(doc, padding) for doc in documents)
         if pad_left:
-            return _itertools.chain.from_iterable(
-                _itertools.chain(padding, doc) for doc in documents
-            )
+            return (_itertools.chain(padding, doc) for doc in documents)
 
     @classmethod
     def from_documents(cls, documents):
