@@ -59,19 +59,13 @@ class Configuration:
             + str(self.arcs)
         )
 
-    def _check_informative(self, feat, flag=False):
+    @staticmethod
+    def _check_informative(feat, flag=False):
         """
         Check whether a feature is informative
         The flag control whether "_" is informative or not
         """
-        if feat is None:
-            return False
-        if feat == "":
-            return False
-        if flag is False:
-            if feat == "_":
-                return False
-        return True
+        return bool(feat) and not (feat == "_" and not flag)
 
     def extract_features(self):
         """
