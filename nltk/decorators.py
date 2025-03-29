@@ -5,6 +5,7 @@ http://www.phyast.pitt.edu/~micheles/python/documentation.html
 
 Included in NLTK for its support of a nice memoization decorator.
 """
+import inspect
 
 __docformat__ = "restructuredtext en"
 
@@ -106,13 +107,15 @@ def getinfo(func):
 
 
 def update_wrapper(wrapper, model, infodict=None):
-    "akin to functools.update_wrapper"
-    infodict = infodict or getinfo(model)
+    "Akin to functools.update_wrapper"
+    if infodict is None:
+        infodict = getinfo(model)
     wrapper.__name__ = infodict["name"]
     wrapper.__doc__ = infodict["doc"]
     wrapper.__module__ = infodict["module"]
-    wrapper.__dict__.update(infodict["dict"])
     wrapper.__defaults__ = infodict["defaults"]
+    if hasattr(model, "__dict__"):
+        wrapper.__dict__.update(model.__dict__)
     wrapper.undecorated = model
     return wrapper
 
@@ -149,14 +152,11 @@ def decorator_factory(cls):
     it raises a TypeError if the class already has a nontrivial __call__
     method.
     """
-    attrs = set(dir(cls))
-    if "__call__" in attrs:
-        raise TypeError(
-            "You cannot decorate a class with a nontrivial " "__call__ method"
-        )
-    if "call" not in attrs:
-        raise TypeError("You cannot decorate a class without a " ".call method")
-    cls.__call__ = __call__
+    if hasattr(cls, "__call__"):
+        raise TypeError("You cannot decorate a class with a nontrivial __call__ method")
+    if not hasattr(cls, "call"):
+        raise TypeError("You cannot decorate a class without a .call method")
+    cls.__call__ = cls.call
     return cls
 
 
@@ -164,44 +164,16 @@ def decorator(caller):
     """
     General purpose decorator factory: takes a caller function as
     input and returns a decorator with the same attributes.
-    A caller function is any function like this::
-
-     def caller(func, *args, **kw):
-         # do something
-         return func(*args, **kw)
-
-    Here is an example of usage:
-
-    >>> @decorator
-    ... def chatty(f, *args, **kw):
-    ...     print("Calling %r" % f.__name__)
-    ...     return f(*args, **kw)
-
-    >>> chatty.__name__
-    'chatty'
-
-    >>> @chatty
-    ... def f(): pass
-    ...
-    >>> f()
-    Calling 'f'
-
-    decorator can also take in input a class with a .caller method; in this
-    case it converts the class into a factory of callable decorator objects.
-    See the documentation for an example.
     """
     if inspect.isclass(caller):
         return decorator_factory(caller)
 
-    def _decorator(func):  # the real meat is here
+    def _decorator(func):
         infodict = getinfo(func)
         argnames = infodict["argnames"]
-        assert not (
-            "_call_" in argnames or "_func_" in argnames
-        ), "You cannot use _call_ or _func_ as argument names!"
-        src = "lambda %(signature)s: _call_(_func_, %(signature)s)" % infodict
-        # import sys; print >> sys.stderr, src # for debugging purposes
-        dec_func = eval(src, dict(_func_=func, _call_=caller))
+        if "_call_" in argnames or "_func_" in argnames:
+            raise ValueError("You cannot use _call_ or _func_ as argument names!")
+        dec_func = lambda *args, **kwargs: caller(func, *args, **kwargs)
         return update_wrapper(dec_func, func, infodict)
 
     return update_wrapper(_decorator, caller)
@@ -226,6 +198,20 @@ def memoize(func, *args):
     result = func(*args)
     dic[args] = result
     return result
+
+
+def getinfo(func):
+    """
+    Helper function to extract info from a function.
+    This should return a dictionary with keys: name, doc, module, defaults, argnames.
+    """
+    return {
+        "name": func.__name__,
+        "doc": func.__doc__,
+        "module": func.__module__,
+        "defaults": func.__defaults__,
+        "argnames": func.__code__.co_varnames[: func.__code__.co_argcount],
+    }
 
 
 ##########################     LEGALESE    ###############################
