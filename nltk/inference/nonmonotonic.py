@@ -30,7 +30,6 @@ from nltk.sem.logic import (
     NegatedExpression,
     Variable,
     VariableExpression,
-    operator,
     unique_variable,
 )
 
@@ -44,7 +43,12 @@ def get_domain(goal, assumptions):
         all_expressions = assumptions
     else:
         all_expressions = assumptions + [-goal]
-    return reduce(operator.or_, (a.constants() for a in all_expressions), set())
+
+    domain = set()
+    for expr in all_expressions:
+        domain.update(expr.constants())
+
+    return domain
 
 
 class ClosedDomainProver(ProverCommandDecorator):
