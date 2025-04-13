@@ -314,9 +314,6 @@ class Clause(list):
         """
         Replace every instance of variable with expression across every atom
         in the clause
-
-        :param variable: ``Variable``
-        :param expression: ``Expression``
         """
         return Clause([atom.replace(variable, expression) for atom in self])
 
@@ -335,6 +332,106 @@ class Clause(list):
 
     def __repr__(self):
         return "%s" % self
+
+    def unify(self, other, bindings=None, used=None, skipped=None, debug=False):
+        """
+        Attempt to unify this Clause with the other, returning a list of
+        resulting, unified, Clauses.
+
+        """
+        if bindings is None:
+            bindings = BindingDict()
+        if used is None:
+            used = ([], [])
+        if skipped is None:
+            skipped = ([], [])
+        if isinstance(debug, bool):
+            debug = DebugObject(debug)
+
+        newclauses = _iterate_first(
+            self, other, bindings, used, skipped, _complete_unify_path, debug
+        )
+
+        # Using set to find subsumed indices for better performance
+        subsumed = set()
+        for i, c1 in enumerate(newclauses):
+            if i in subsumed:
+                continue
+            for j, c2 in enumerate(newclauses):
+                if i != j and j not in subsumed and c1.subsumes(c2):
+                    subsumed.add(j)
+
+        # List comprehension for filtering out subsumed clauses
+        result = [newclauses[i] for i in range(len(newclauses)) if i not in subsumed]
+
+        return result
+
+    def isSubsetOf(self, other):
+        """
+        Return True iff every term in 'self' is a term in 'other'.
+        """
+        return all(a in other for a in self)
+
+    def subsumes(self, other):
+        """
+        Return True iff 'self' subsumes 'other', this is, if there is a
+        substitution such that every term in 'self' can be unified with a term
+        in 'other'.
+        """
+        negatedother = [
+            atom.term if isinstance(atom, NegatedExpression) else -atom
+            for atom in other
+        ]
+        negatedotherClause = Clause(negatedother)
+
+        bindings = BindingDict()
+        used = ([], [])
+        skipped = ([], [])
+        debug = DebugObject(False)
+
+        return bool(
+            _iterate_first(
+                self,
+                negatedotherClause,
+                bindings,
+                used,
+                skipped,
+                _subsumes_finalize,
+                debug,
+            )
+        )
+
+    def is_tautology(self):
+        """
+        Self is a tautology if it contains ground terms P and -P.
+        """
+        if self._is_tautology is not None:
+            return self._is_tautology
+
+        length = len(self)
+        for i, a in enumerate(self):
+            if isinstance(a, EqualityExpression):
+                continue
+            for j in range(length - 1, i, -1):
+                b = self[j]
+                if isinstance(a, NegatedExpression) and a.term == b:
+                    self._is_tautology = True
+                    return True
+                if isinstance(b, NegatedExpression) and a == b.term:
+                    self._is_tautology = True
+                    return True
+
+        self._is_tautology = False
+        return False
+
+    def free(self):
+        return reduce(operator.or_, (atom.free() | atom.constants() for atom in self))
+
+    def substitute_bindings(self, bindings):
+        """
+        Replace every binding
+        """
+        return Clause([atom.substitute_bindings(bindings) for atom in self])
 
 
 def _iterate_first(first, second, bindings, used, skipped, finalize_method, debug):
