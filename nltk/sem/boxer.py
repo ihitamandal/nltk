@@ -1049,7 +1049,9 @@ class BoxerDrs(AbstractBoxerDrs):
         return variables
 
     def atoms(self):
-        atoms = reduce(operator.or_, (cond.atoms() for cond in self.conds), set())
+        atoms = set()
+        for cond in self.conds:
+            atoms.update(cond.atoms())
         if self.consequent is not None:
             atoms.update(self.consequent.atoms())
         return atoms
