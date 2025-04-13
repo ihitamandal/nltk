@@ -16,15 +16,10 @@ import warnings
 from collections import defaultdict, deque
 from itertools import chain, combinations, islice, tee
 from pprint import pprint
-from urllib.request import (
-    HTTPPasswordMgrWithDefaultRealm,
-    ProxyBasicAuthHandler,
-    ProxyDigestAuthHandler,
-    ProxyHandler,
-    build_opener,
-    getproxies,
-    install_opener,
-)
+from urllib.request import (HTTPPasswordMgrWithDefaultRealm,
+                            ProxyBasicAuthHandler, ProxyDigestAuthHandler,
+                            ProxyHandler, build_opener, getproxies,
+                            install_opener)
 
 from nltk.collections import *
 from nltk.internals import deprecated, raise_unorderable_types, slice_bounds
@@ -706,12 +701,6 @@ def invert_dict(d):
     return inverted_dict
 
 
-##########################################################################
-# Utilities for directed graphs: transitive closure, and inversion
-# The graph is represented as a dictionary of sets
-##########################################################################
-
-
 def transitive_closure(graph, reflexive=False):
     """
     Calculate the transitive closure of a directed graph,
@@ -730,19 +719,19 @@ def transitive_closure(graph, reflexive=False):
         base_set = lambda k: {k}
     else:
         base_set = lambda k: set()
-    # The graph U_i in the article:
-    agenda_graph = {k: graph[k].copy() for k in graph}
-    # The graph M_i in the article:
+
+    agenda_graph = {k: v.copy() for k, v in graph.items()}
     closure_graph = {k: base_set(k) for k in graph}
+
     for i in graph:
-        agenda = agenda_graph[i]
+        agenda = list(agenda_graph[i])
         closure = closure_graph[i]
         while agenda:
             j = agenda.pop()
-            closure.add(j)
-            closure |= closure_graph.setdefault(j, base_set(j))
-            agenda |= agenda_graph.get(j, base_set(j))
-            agenda -= closure
+            if j not in closure:
+                closure.add(j)
+                closure.update(closure_graph.setdefault(j, base_set(j)))
+                agenda.extend(agenda_graph.get(j, base_set(j)) - closure)
     return closure_graph
 
 
@@ -755,11 +744,11 @@ def invert_graph(graph):
     :return: the inverted graph
     :rtype: dict(set)
     """
-    inverted = {}
-    for key in graph:
-        for value in graph[key]:
-            inverted.setdefault(value, set()).add(key)
-    return inverted
+    inverted = defaultdict(set)
+    for key, values in graph.items():
+        for value in values:
+            inverted[value].add(key)
+    return dict(inverted)
 
 
 ##########################################################################

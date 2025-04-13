@@ -72,6 +72,7 @@ import re
 from collections import deque
 from functools import total_ordering
 
+from nltk.collections import *
 from nltk.featstruct import SLASH, TYPE, FeatDict, FeatStruct, FeatStructReader
 from nltk.internals import raise_unorderable_types
 from nltk.probability import ImmutableProbabilisticMixIn
@@ -506,12 +507,11 @@ class CFG:
                     self._lexical_index.setdefault(token, set()).add(prod)
 
     def _calculate_leftcorners(self):
-        # Calculate leftcorner relations, for use in optimized parsing.
         self._immediate_leftcorner_categories = {cat: {cat} for cat in self._categories}
         self._immediate_leftcorner_words = {cat: set() for cat in self._categories}
         for prod in self.productions():
             if len(prod) > 0:
-                cat, left = prod.lhs(), prod.rhs()[0]
+                cat, left = prod.lhs(), prod._rhs[0]
                 if is_nonterminal(left):
                     self._immediate_leftcorner_categories[cat].add(left)
                 else:
@@ -521,22 +521,22 @@ class CFG:
         self._leftcorners = lc
         self._leftcorner_parents = invert_graph(lc)
 
-        nr_leftcorner_categories = sum(
+        num_leftcorner_categories = sum(
             map(len, self._immediate_leftcorner_categories.values())
         )
-        nr_leftcorner_words = sum(map(len, self._immediate_leftcorner_words.values()))
-        if nr_leftcorner_words > nr_leftcorner_categories > 10000:
-            # If the grammar is big, the leftcorner-word dictionary will be too large.
-            # In that case it is better to calculate the relation on demand.
+        num_leftcorner_words = sum(map(len, self._immediate_leftcorner_words.values()))
+        if num_leftcorner_words > num_leftcorner_categories > 10000:
             self._leftcorner_words = None
             return
 
-        self._leftcorner_words = {}
-        for cat in self._leftcorners:
-            lefts = self._leftcorners[cat]
-            lc = self._leftcorner_words[cat] = set()
-            for left in lefts:
-                lc.update(self._immediate_leftcorner_words.get(left, set()))
+        self._leftcorner_words = {
+            cat: {
+                word
+                for left in lefts
+                for word in self._immediate_leftcorner_words.get(left, set())
+            }
+            for cat, lefts in self._leftcorners.items()
+        }
 
     @classmethod
     def fromstring(cls, input, encoding=None):
@@ -558,8 +558,6 @@ class CFG:
         """
         return self._start
 
-    # tricky to balance readability and efficiency here!
-    # can't use set operations as they don't preserve ordering
     def productions(self, lhs=None, rhs=None, empty=False):
         """
         Return the grammar productions, filtered by the left-hand side
@@ -574,36 +572,25 @@ class CFG:
         """
         if rhs and empty:
             raise ValueError(
-                "You cannot select empty and non-empty " "productions at the same time."
+                "You cannot select empty and non-empty productions at the same time."
             )
 
-        # no constraints so return everything
         if not lhs and not rhs:
-            if not empty:
-                return self._productions
-            else:
-                return self._empty_index.values()
+            return list(self._empty_index.values()) if empty else self._productions
 
-        # only lhs specified so look up its index
-        elif lhs and not rhs:
-            if not empty:
-                return self._lhs_index.get(lhs, [])
-            elif lhs in self._empty_index:
-                return [self._empty_index[lhs]]
-            else:
-                return []
+        if lhs and not rhs:
+            if empty:
+                return [self._empty_index[lhs]] if lhs in self._empty_index else []
+            return self._lhs_index.get(lhs, [])
 
-        # only rhs specified so look up its index
-        elif rhs and not lhs:
+        if rhs and not lhs:
             return self._rhs_index.get(rhs, [])
 
-        # intersect
-        else:
-            return [
-                prod
-                for prod in self._lhs_index.get(lhs, [])
-                if prod in self._rhs_index.get(rhs, [])
-            ]
+        return [
+            prod
+            for prod in self._lhs_index.get(lhs, [])
+            if prod in self._rhs_index.get(rhs, [])
+        ]
 
     def leftcorners(self, cat):
         """
