@@ -995,12 +995,24 @@ class BoxerDrsParser(DrtParser):
 
 
 class AbstractBoxerDrs:
-    def variables(self):
+    def variables(self) -> tuple[set[object], set[object], set[object]]:
         """
-        :return: (set<variables>, set<events>, set<propositions>)
+        Obtain the processed variables, events, and propositions.
+
+        Returns
+        -------
+        tuple of (set of variables, set of events, set of propositions)
+            The set of variables excluding events and propositions, events,
+            and propositions excluding events.
         """
-        variables, events, propositions = self._variables()
-        return (variables - (events | propositions), events, propositions - events)
+        if self._cache is None:
+            self._cache = self._variables()
+
+        variables, events, propositions = self._cache
+        variables.difference_update(events, propositions)
+        propositions.difference_update(events)
+
+        return variables, events, propositions
 
     def variable_types(self):
         vartypes = {}
@@ -1009,9 +1021,14 @@ class AbstractBoxerDrs:
                 vartypes[v] = t
         return vartypes
 
-    def _variables(self):
+    def _variables(self) -> tuple[set[object], set[object], set[object]]:
         """
-        :return: (set<variables>, set<events>, set<propositions>)
+        Compute the raw variables, events, and propositions.
+
+        Returns
+        -------
+        tuple of (set of variables, set of events, set of propositions)
+            Three sets representing variables, events, and propositions.
         """
         return (set(), set(), set())
 
@@ -1029,6 +1046,9 @@ class AbstractBoxerDrs:
 
     def __hash__(self):
         return hash(f"{self}")
+
+    def __init__(self) -> None:
+        self._cache: tuple[set[object], set[object], set[object]] | None = None
 
 
 class BoxerDrs(AbstractBoxerDrs):
