@@ -1000,14 +1000,18 @@ class AbstractBoxerDrs:
         :return: (set<variables>, set<events>, set<propositions>)
         """
         variables, events, propositions = self._variables()
-        return (variables - (events | propositions), events, propositions - events)
+        # Using set operations directly in the return statement to reduce intermediate steps.
+        return (
+            variables.difference(events, propositions),
+            events,
+            propositions.difference(events),
+        )
 
     def variable_types(self):
-        vartypes = {}
-        for t, vars in zip(("z", "e", "p"), self.variables()):
-            for v in vars:
-                vartypes[v] = t
-        return vartypes
+        # Using dictionary comprehension for more efficient dict construction
+        return {
+            v: t for t, vars in zip(("z", "e", "p"), self.variables()) for v in vars
+        }
 
     def _variables(self):
         """
