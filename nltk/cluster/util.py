@@ -10,6 +10,8 @@ from abc import abstractmethod
 from math import sqrt
 from sys import stdout
 
+import numpy as np
+
 try:
     import numpy
 except ImportError:
@@ -127,7 +129,10 @@ def cosine_distance(u, v):
     Returns 1 minus the cosine of the angle between vectors v and u. This is
     equal to ``1 - (u.v / |u||v|)``.
     """
-    return 1 - (numpy.dot(u, v) / (sqrt(numpy.dot(u, u)) * sqrt(numpy.dot(v, v))))
+    dot_uv = np.dot(u, v)
+    norm_u = np.linalg.norm(u)
+    norm_v = np.linalg.norm(v)
+    return 1 - (dot_uv / (norm_u * norm_v))
 
 
 class _DendrogramNode:
