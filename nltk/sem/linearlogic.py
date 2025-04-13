@@ -122,7 +122,7 @@ class AtomicExpression(Expression):
         :param glueFormulaFactory: ``GlueFormula`` for creating new glue formulas
         :return: (``Expression``,set) for the compiled linear logic and any newly created glue formulas
         """
-        self.dependencies = []
+        self.dependencies.clear()
         return (self, [])
 
     def compile_neg(self, index_counter, glueFormulaFactory):
