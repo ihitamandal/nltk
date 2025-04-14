@@ -79,10 +79,11 @@ class CMUDictCorpusReader(CorpusReader):
 
 def read_cmudict_block(stream):
     entries = []
+    append_entry = entries.append
     while len(entries) < 100:  # Read 100 at a time.
         line = stream.readline()
-        if line == "":
-            return entries  # end of file.
+        if not line:
+            break  # end of file.
         pieces = line.split()
-        entries.append((pieces[0].lower(), pieces[2:]))
+        append_entry((pieces[0].lower(), pieces[2:]))
     return entries
