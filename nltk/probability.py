@@ -484,6 +484,16 @@ class FreqDist(Counter):
         for token, _ in self.most_common(self.B()):
             yield token
 
+    def N(self):
+        """Return the total number of sample outcomes. If the value is cached, return it directly."""
+        if self._N is None:
+            self._N = sum(self.values())
+        return self._N
+
+    def B(self):
+        """Return the total number of unique sample outcomes."""
+        return len(self)
+
 
 ##//////////////////////////////////////////////////////
 ##  Probability Distributions
