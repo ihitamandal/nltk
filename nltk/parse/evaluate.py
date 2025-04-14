@@ -88,36 +88,37 @@ class DependencyEvaluator:
     def eval(self):
         """
         Return the Labeled Attachment Score (LAS) and Unlabeled Attachment Score (UAS)
-
         :return : tuple(float,float)
         """
-        if len(self._parsed_sents) != len(self._gold_sents):
+        parsed_sents = self._parsed_sents
+        gold_sents = self._gold_sents
+        num_sents = len(parsed_sents)
+
+        if num_sents != len(gold_sents):
             raise ValueError(
-                " Number of parsed sentence is different with number of gold sentence."
+                "Number of parsed sentences is different from the number of gold sentences."
             )
 
-        corr = 0
-        corrL = 0
-        total = 0
+        corr = corrL = total = 0
+        is_punct = self._is_punct
 
-        for i in range(len(self._parsed_sents)):
-            parsed_sent_nodes = self._parsed_sents[i].nodes
-            gold_sent_nodes = self._gold_sents[i].nodes
+        for i in range(num_sents):
+            parsed_nodes = parsed_sents[i].nodes
+            gold_nodes = gold_sents[i].nodes
 
-            if len(parsed_sent_nodes) != len(gold_sent_nodes):
+            if len(parsed_nodes) != len(gold_nodes):
                 raise ValueError("Sentences must have equal length.")
 
-            for parsed_node_address, parsed_node in parsed_sent_nodes.items():
-                gold_node = gold_sent_nodes[parsed_node_address]
+            for parsed_node_address, parsed_node in parsed_nodes.items():
+                gold_node = gold_nodes[parsed_node_address]
 
-                if parsed_node["word"] is None:
+                parsed_word = parsed_node["word"]
+                if parsed_word is None:
                     continue
-                if parsed_node["word"] != gold_node["word"]:
+                if parsed_word != gold_node["word"]:
                     raise ValueError("Sentence sequence is not matched.")
 
-                # Ignore if word is punctuation by default
-                # if (parsed_sent[j]["word"] in string.punctuation):
-                if self._remove_punct(parsed_node["word"]) == "":
+                if is_punct(parsed_word):
                     continue
 
                 total += 1
@@ -127,3 +128,12 @@ class DependencyEvaluator:
                         corrL += 1
 
         return corrL / total, corr / total
+
+    def _is_punct(self, inStr):
+        """
+        Function to check if a Unicode string is punctuation.
+        :param inStr: the input string
+        :return: Boolean indicating whether the string is punctuation
+        """
+        punc_cat = {"Pc", "Pd", "Ps", "Pe", "Pi", "Pf", "Po"}
+        return all(unicodedata.category(x) in punc_cat for x in inStr)
