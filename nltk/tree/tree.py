@@ -316,12 +316,13 @@ class Tree(list):
         positions = []
         if order in ("preorder", "bothorder"):
             positions.append(())
+
         for i, child in enumerate(self):
             if isinstance(child, Tree):
-                childpos = child.treepositions(order)
-                positions.extend((i,) + p for p in childpos)
+                positions.extend((i,) + p for p in child.treepositions(order))
             else:
                 positions.append((i,))
+
         if order in ("postorder", "bothorder"):
             positions.append(())
         return positions
