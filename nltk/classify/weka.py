@@ -269,7 +269,8 @@ class ARFF_Formatter:
 
     def labels(self):
         """Returns the list of classes."""
-        return list(self._labels)
+        # Assuming self._labels is immutable, directly returning it
+        return self._labels
 
     def write(self, outfile, tokens):
         """Writes ARFF data to a file for the given data."""
