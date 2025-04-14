@@ -274,18 +274,18 @@ class ViterbiParser(ParserI):
         (start, end) = span
 
         # Base case
-        if start >= end and rhs == ():
-            return [[]]
-        if start >= end or rhs == ():
-            return []
+        if start >= end:
+            return [[]] if rhs == () else []
 
         # Find everything that matches the 1st symbol of the RHS
+        symbol = rhs[0]
+        remaining_rhs = rhs[1:]
         childlists = []
         for split in range(start, end + 1):
-            l = constituents.get((start, split, rhs[0]))
+            l = constituents.get((start, split, symbol))
             if l is not None:
-                rights = self._match_rhs(rhs[1:], (split, end), constituents)
-                childlists += [[l] + r for r in rights]
+                rights = self._match_rhs(remaining_rhs, (split, end), constituents)
+                childlists.extend([[l] + r for r in rights])
 
         return childlists
 
