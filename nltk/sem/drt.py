@@ -37,6 +37,7 @@ from nltk.sem.logic import (
     is_indvar,
     unique_variable,
 )
+from typing import List
 
 # Import Tkinter-based modules if they are available
 try:
@@ -739,24 +740,41 @@ class DrtBinaryExpression(DrtExpression, BinaryExpression):
         )
 
     @staticmethod
-    def _assemble_pretty(first_lines, op, second_lines):
+    def _assemble_pretty(
+        first_lines: List[str], op: str, second_lines: List[str]
+    ) -> List[str]:
+        """Assemble a visual representation of two vertically padded lists of strings.
+
+        Parameters
+        ----------
+        first_lines : list of str
+            The first list of strings.
+        op : str
+            The operator string.
+        second_lines : list of str
+            The second list of strings.
+
+        Returns
+        -------
+        list of str
+            Visual representation of the combined lists.
+        """
         max_lines = max(len(first_lines), len(second_lines))
         first_lines = _pad_vertically(first_lines, max_lines)
         second_lines = _pad_vertically(second_lines, max_lines)
         blank = " " * len(op)
-        first_second_lines = list(zip(first_lines, second_lines))
         return (
             [
-                " " + first_line + " " + blank + " " + second_line + " "
-                for first_line, second_line in first_second_lines[:2]
+                f" {first_lines[i]} {blank} {second_lines[i]} "
+                for i in range(min(2, max_lines))
             ]
             + [
-                "(" + first_line + " " + op + " " + second_line + ")"
-                for first_line, second_line in first_second_lines[2:3]
+                f"({first_lines[i]} {op} {second_lines[i]})"
+                for i in range(2, min(3, max_lines))
             ]
             + [
-                " " + first_line + " " + blank + " " + second_line + " "
-                for first_line, second_line in first_second_lines[3:]
+                f" {first_lines[i]} {blank} {second_lines[i]} "
+                for i in range(3, max_lines)
             ]
         )
 
@@ -975,7 +993,21 @@ class DrtApplicationExpression(DrtExpression, ApplicationExpression):
         )
 
 
-def _pad_vertically(lines, max_lines):
+def _pad_vertically(lines: List[str], max_lines: int) -> List[str]:
+    """Pad the list of lines vertically to match the max_lines.
+
+    Parameters
+    ----------
+    lines : list of str
+        List of lines to pad.
+    max_lines : int
+        The number of lines to pad to.
+
+    Returns
+    -------
+    list of str
+        Vertically padded list of lines.
+    """
     pad_line = [" " * len(lines[0])]
     return lines + pad_line * (max_lines - len(lines))
 
