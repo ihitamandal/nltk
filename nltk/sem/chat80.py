@@ -308,10 +308,7 @@ class Concept:
         """
         g = {}
         for x, y in s:
-            if x in g:
-                g[x].append(y)
-            else:
-                g[x] = [y]
+            g.setdefault(x, []).append(y)
         return g
 
     def _transclose(self, g):
