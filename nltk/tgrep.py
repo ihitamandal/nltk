@@ -112,6 +112,8 @@ macro definitions to ``m`` and initialises ``l`` to an empty dictionary.
 import functools
 import re
 
+import pyparsing
+
 try:
     import pyparsing
 except ImportError:
@@ -851,81 +853,90 @@ def _build_tgrep_parser(set_parse_actions=True):
     Builds a pyparsing-based parser object for tokenizing and
     interpreting tgrep search strings.
     """
-    tgrep_op = pyparsing.Optional("!") + pyparsing.Regex("[$%,.<>][%,.<>0-9-':]*")
-    tgrep_qstring = pyparsing.QuotedString(
-        quoteChar='"', escChar="\\", unquoteResults=False
+    tgrep_op = pyparsing.Optional("!") + create_regex_pattern("[$%,.<>][%,.<>0-9-':]*")
+    quoted_double = create_quoted_string('"', "\\")
+    quoted_slash = create_quoted_string("/", "\\")
+    tgrep_qstring_icase = create_regex_pattern(r'i@\\"(?:[^"\\n\\r\\\\]|(?:\\\\.))*\\"')
+    tgrep_node_regex_icase = create_regex_pattern(
+        r"i@\\/(?:[^/\\n\\r\\\\]|(?:\\\\.))*\\/"
     )
-    tgrep_node_regex = pyparsing.QuotedString(
-        quoteChar="/", escChar="\\", unquoteResults=False
-    )
-    tgrep_qstring_icase = pyparsing.Regex('i@\\"(?:[^"\\n\\r\\\\]|(?:\\\\.))*\\"')
-    tgrep_node_regex_icase = pyparsing.Regex("i@\\/(?:[^/\\n\\r\\\\]|(?:\\\\.))*\\/")
-    tgrep_node_literal = pyparsing.Regex("[^][ \r\t\n;:.,&|<>()$!@%'^=]+")
+    tgrep_node_literal = create_regex_pattern(r"[^][ \r\t\n;:.,&|<>()$!@%'^=]+")
     tgrep_expr = pyparsing.Forward()
     tgrep_relations = pyparsing.Forward()
+
     tgrep_parens = pyparsing.Literal("(") + tgrep_expr + ")"
+
+    nums = pyparsing.Word(pyparsing.nums)
     tgrep_nltk_tree_pos = (
         pyparsing.Literal("N(")
         + pyparsing.Optional(
-            pyparsing.Word(pyparsing.nums)
+            nums
             + ","
             + pyparsing.Optional(
-                pyparsing.delimitedList(pyparsing.Word(pyparsing.nums), delim=",")
-                + pyparsing.Optional(",")
+                pyparsing.delimitedList(nums, delim=",") + pyparsing.Optional(",")
             )
         )
         + ")"
     )
-    tgrep_node_label = pyparsing.Regex("[A-Za-z0-9]+")
+
+    tgrep_node_label = create_regex_pattern(r"[A-Za-z0-9]+")
     tgrep_node_label_use = pyparsing.Combine("=" + tgrep_node_label)
-    # see _tgrep_segmented_pattern_action
     tgrep_node_label_use_pred = tgrep_node_label_use.copy()
-    macro_name = pyparsing.Regex("[^];:.,&|<>()[$!@%'^=\r\t\n ]+")
+
+    macro_name = create_regex_pattern(r"[^];:.,&|<>()[$!@%'^=\r\t\n ]+")
     macro_name.setWhitespaceChars("")
     macro_use = pyparsing.Combine("@" + macro_name)
-    tgrep_node_expr = (
-        tgrep_node_label_use_pred
-        | macro_use
-        | tgrep_nltk_tree_pos
-        | tgrep_qstring_icase
-        | tgrep_node_regex_icase
-        | tgrep_qstring
-        | tgrep_node_regex
-        | "*"
-        | tgrep_node_literal
-    )
+
+    tgrep_node_expr_options = [
+        tgrep_node_label_use_pred,
+        macro_use,
+        tgrep_nltk_tree_pos,
+        tgrep_qstring_icase,
+        tgrep_node_regex_icase,
+        quoted_double,
+        quoted_slash,
+        "*",
+        tgrep_node_literal,
+    ]
+    tgrep_node_expr = pyparsing.MatchFirst(tgrep_node_expr_options)
+
+    node_expr_equals = pyparsing.Literal("=").setWhitespaceChars("")
     tgrep_node_expr2 = (
-        tgrep_node_expr
-        + pyparsing.Literal("=").setWhitespaceChars("")
-        + tgrep_node_label.copy().setWhitespaceChars("")
+        tgrep_node_expr + node_expr_equals + tgrep_node_label.setWhitespaceChars("")
     ) | tgrep_node_expr
+
     tgrep_node = tgrep_parens | (
         pyparsing.Optional("'")
         + tgrep_node_expr2
         + pyparsing.ZeroOrMore("|" + tgrep_node_expr)
     )
+
     tgrep_brackets = pyparsing.Optional("!") + "[" + tgrep_relations + "]"
     tgrep_relation = tgrep_brackets | (tgrep_op + tgrep_node)
     tgrep_rel_conjunction = pyparsing.Forward()
-    tgrep_rel_conjunction << (
-        tgrep_relation
-        + pyparsing.ZeroOrMore(pyparsing.Optional("&") + tgrep_rel_conjunction)
+
+    tgrep_rel_conjunction << tgrep_relation + pyparsing.ZeroOrMore(
+        pyparsing.Optional("&") + tgrep_rel_conjunction
     )
     tgrep_relations << tgrep_rel_conjunction + pyparsing.ZeroOrMore(
         "|" + tgrep_relations
     )
     tgrep_expr << tgrep_node + pyparsing.Optional(tgrep_relations)
+
     tgrep_expr_labeled = tgrep_node_label_use + pyparsing.Optional(tgrep_relations)
     tgrep_expr2 = tgrep_expr + pyparsing.ZeroOrMore(":" + tgrep_expr_labeled)
+
     macro_defn = (
         pyparsing.Literal("@") + pyparsing.White().suppress() + macro_name + tgrep_expr2
     )
+
     tgrep_exprs = (
         pyparsing.Optional(macro_defn + pyparsing.ZeroOrMore(";" + macro_defn) + ";")
         + tgrep_expr2
         + pyparsing.ZeroOrMore(";" + (macro_defn | tgrep_expr2))
         + pyparsing.ZeroOrMore(";").suppress()
     )
+
     if set_parse_actions:
         tgrep_node_label_use.setParseAction(_tgrep_node_label_use_action)
         tgrep_node_label_use_pred.setParseAction(_tgrep_node_label_pred_use_action)
@@ -938,15 +949,13 @@ def _build_tgrep_parser(set_parse_actions=True):
         tgrep_rel_conjunction.setParseAction(_tgrep_conjunction_action)
         tgrep_relations.setParseAction(_tgrep_rel_disjunction_action)
         macro_defn.setParseAction(_macro_defn_action)
-        # the whole expression is also the conjunction of two
-        # predicates: the first node predicate, and the remaining
-        # relation predicates
         tgrep_expr.setParseAction(_tgrep_conjunction_action)
         tgrep_expr_labeled.setParseAction(_tgrep_segmented_pattern_action)
         tgrep_expr2.setParseAction(
             functools.partial(_tgrep_conjunction_action, join_char=":")
         )
         tgrep_exprs.setParseAction(_tgrep_exprs_action)
+
     return tgrep_exprs.ignore("#" + pyparsing.restOfLine)
 
 
@@ -1038,3 +1047,12 @@ def tgrep_nodes(pattern, trees, search_leaves=True):
             yield [tree[position] for position in positions if pattern(tree[position])]
         except AttributeError:
             yield []
+
+
+# Helper function to reduce some redundancy in repeated patterns
+def create_quoted_string(quote, esc):
+    return pyparsing.QuotedString(quoteChar=quote, escChar=esc, unquoteResults=False)
+
+
+def create_regex_pattern(pattern):
+    return pyparsing.Regex(pattern)
