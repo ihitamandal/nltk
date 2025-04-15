@@ -936,7 +936,12 @@ def get_static_upper_page(with_shutdown):
     If with_shutdown is True then a 'shutdown' button is also provided
     to shutdown the server.
     """
-    template = """
+    if with_shutdown:
+        shutdown_link = '<a href="SHUTDOWN THE SERVER">Shutdown</a>'
+    else:
+        shutdown_link = ""
+
+    return f"""
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
     <!-- Natural Language Toolkit: Wordnet Interface: Graphical Wordnet Browser
@@ -955,17 +960,11 @@ def get_static_upper_page(with_shutdown):
             <input name="searchButton" type="submit" value="Search">
     </form>
         <a target="body" href="web_help.html">Help</a>
-        %s
+        {shutdown_link}
 
 </body>
 </html>
 """
-    if with_shutdown:
-        shutdown_link = '<a href="SHUTDOWN THE SERVER">Shutdown</a>'
-    else:
-        shutdown_link = ""
-
-    return template % shutdown_link
 
 
 def usage():
