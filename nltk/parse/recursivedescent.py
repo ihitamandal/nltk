@@ -538,17 +538,17 @@ class SteppingRecursiveDescentParser(RecursiveDescentParser):
     def backtrack(self):
         """
         Return the parser to its state before the most recent
-        match or expand operation.  Calling ``undo`` repeatedly return
+        match or expand operation.  Calling ``backtrack`` repeatedly return
         the parser to successively earlier states.  If no match or
-        expand operations have been performed, ``undo`` will make no
+        expand operations have been performed, ``backtrack`` will make no
         changes.
 
         :return: true if an operation was successfully undone.
         :rtype: bool
         """
-        if len(self._history) == 0:
+        if not self._history:
             return False
-        (self._rtext, self._tree, self._frontier) = self._history.pop()
+        self._rtext, self._tree, self._frontier = self._history.pop()
         return True
 
     def expandable_productions(self):
@@ -643,6 +643,15 @@ class SteppingRecursiveDescentParser(RecursiveDescentParser):
         :type grammar: CFG
         """
         self._grammar = grammar
+
+    def _reset(self):
+        self._rtext = None
+        self._tree = None
+        self._frontier = [()]
+        self._tried_e = {}
+        self._tried_m = {}
+        self._history = []
+        self._parses = []
 
 
 ##//////////////////////////////////////////////////////
