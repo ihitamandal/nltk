@@ -54,6 +54,7 @@ from nltk.sem.logic import (
     UnexpectedTokenException,
     Variable,
 )
+from typing import Set
 
 
 class Boxer:
@@ -1048,10 +1049,12 @@ class BoxerDrs(AbstractBoxerDrs):
                 s.update(v)
         return variables
 
-    def atoms(self):
-        atoms = reduce(operator.or_, (cond.atoms() for cond in self.conds), set())
-        if self.consequent is not None:
-            atoms.update(self.consequent.atoms())
+    def atoms(self) -> Set[object]:
+        atoms = set()
+        for cond in self.conds:
+            atoms |= cond.atoms()
+        if self.consequent:
+            atoms |= self.consequent.atoms()
         return atoms
 
     def clean(self):
