@@ -364,39 +364,21 @@ class Concept:
 def clause2concepts(filename, rel_name, schema, closures=[]):
     """
     Convert a file of Prolog clauses into a list of ``Concept`` objects.
-
-    :param filename: filename containing the relations
-    :type filename: str
-    :param rel_name: name of the relation
-    :type rel_name: str
-    :param schema: the schema used in a set of relational tuples
-    :type schema: list
-    :param closures: closure properties for the extension of the concept
-    :type closures: list
-    :return: a list of ``Concept`` objects
-    :rtype: list
     """
     concepts = []
-    # position of the subject of a binary relation
     subj = 0
-    # label of the 'primary key'
     pkey = schema[0]
-    # fields other than the primary key
     fields = schema[1:]
 
-    # convert a file into a list of lists
     records = _str2records(filename, rel_name)
 
-    # add a unary concept corresponding to the set of entities
-    # in the primary key position
-    # relations in 'not_unary' are more like ordinary binary relations
-    if not filename in not_unary:
+    if filename not in not_unary:
         concepts.append(unary_concept(pkey, subj, records))
 
-    # add a binary concept for each non-key field
     for field in fields:
-        obj = schema.index(field)
-        concepts.append(binary_concept(field, closures, subj, obj, records))
+        concepts.append(
+            binary_concept(field, closures, subj, schema.index(field), records)
+        )
 
     return concepts
 
@@ -470,32 +452,18 @@ def _str2records(filename, rel):
     Read a file into memory and convert each relation clause into a list.
     """
     recs = []
-    contents = nltk.data.load("corpora/chat80/%s" % filename, format="text")
+    contents = nltk.data.load(f"corpora/chat80/{filename}", format="text")
+    prefix_len = len(rel) + 1  # length of rel + "(", for quick slicing
     for line in contents.splitlines():
         if line.startswith(rel):
-            line = re.sub(rel + r"\(", "", line)
-            line = re.sub(r"\)\.$", "", line)
-            record = line.split(",")
-            recs.append(record)
+            line = line[prefix_len:-2]  # Remove prefix and the ending ').'
+            recs.append(line.split(","))
     return recs
 
 
 def unary_concept(label, subj, records):
     """
     Make a unary concept out of the primary key in a record.
-
-    A record is a list of entities in some relation, such as
-    ``['france', 'paris']``, where ``'france'`` is acting as the primary
-    key.
-
-    :param label: the preferred label for the concept
-    :type label: string
-    :param subj: position in the record of the subject of the predicate
-    :type subj: int
-    :param records: a list of records
-    :type records: list of lists
-    :return: ``Concept`` of arity 1
-    :rtype: Concept
     """
     c = Concept(label, arity=1, extension=set())
     for record in records:
@@ -506,37 +474,12 @@ def unary_concept(label, subj, records):
 def binary_concept(label, closures, subj, obj, records):
     """
     Make a binary concept out of the primary key and another field in a record.
-
-    A record is a list of entities in some relation, such as
-    ``['france', 'paris']``, where ``'france'`` is acting as the primary
-    key, and ``'paris'`` stands in the ``'capital_of'`` relation to
-    ``'france'``.
-
-    More generally, given a record such as ``['a', 'b', 'c']``, where
-    label is bound to ``'B'``, and ``obj`` bound to 1, the derived
-    binary concept will have label ``'B_of'``, and its extension will
-    be a set of pairs such as ``('a', 'b')``.
-
-
-    :param label: the base part of the preferred label for the concept
-    :type label: str
-    :param closures: closure properties for the extension of the concept
-    :type closures: list
-    :param subj: position in the record of the subject of the predicate
-    :type subj: int
-    :param obj: position in the record of the object of the predicate
-    :type obj: int
-    :param records: a list of records
-    :type records: list of lists
-    :return: ``Concept`` of arity 2
-    :rtype: Concept
     """
-    if not label == "border" and not label == "contain":
-        label = label + "_of"
+    if label not in {"border", "contain"}:
+        label = f"{label}_of"
     c = Concept(label, arity=2, closures=closures, extension=set())
     for record in records:
         c.augment((record[subj], record[obj]))
-    # close the concept's extension according to the properties in closures
     c.close()
     return c
 
