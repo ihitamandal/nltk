@@ -463,7 +463,14 @@ class FunctionBackedMaxentFeatureEncoding(MaxentFeatureEncodingI):
     def encode(self, featureset, label):
         return self._func(featureset, label)
 
-    def length(self):
+    def length(self) -> int:
+        """Return the length of the fixed-length joint-feature vectors.
+
+        Returns
+        -------
+        int
+            The length of the fixed-length joint-feature vectors.
+        """
         return self._length
 
     def labels(self):
