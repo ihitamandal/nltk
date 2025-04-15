@@ -1154,10 +1154,10 @@ class ProbabilisticDependencyGrammar:
         :type mod: str
         :rtype: bool
         """
+        # Use set for faster membership testing if possible
         for production in self._productions:
-            for possibleMod in production._rhs:
-                if production._lhs == head and possibleMod == mod:
-                    return True
+            if production._lhs == head and mod in production._rhs:
+                return True
         return False
 
     def __str__(self):
