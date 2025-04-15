@@ -451,22 +451,19 @@ class Synset(_WordNetObject):
     def _doc(self, doc_type, default, lang="eng"):
         """Helper method for Synset.definition and Synset.examples"""
         corpus = self._wordnet_corpus_reader
+        if lang == "eng":
+            return default
         if lang not in corpus.langs():
             return None
-        elif lang == "eng":
-            return default
-        else:
-            corpus._load_lang_data(lang)
-            of = corpus.ss2of(self)
-            i = corpus.lg_attrs.index(doc_type)
-            if of in corpus._lang_data[lang][i]:
-                return corpus._lang_data[lang][i][of]
-            else:
-                return None
+
+        corpus._load_lang_data(lang)
+        of = corpus.ss2of(self)
+        i = corpus.lg_attrs.index(doc_type)
+        return corpus._lang_data[lang][i].get(of, None)
 
     def definition(self, lang="eng"):
         """Return definition in specified language"""
-        return self._doc("def", self._definition, lang=lang)
+        return self._doc("def", self._definition, lang)
 
     def examples(self, lang="eng"):
         """Return examples in specified language"""
