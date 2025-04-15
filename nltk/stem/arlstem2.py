@@ -220,14 +220,14 @@ class ARLSTem2(StemmerI):
 
     def adjective(self, token):
         """
-        remove the infixes from adjectives
+        Remove the infixes from adjectives
         """
         # ^Alif, Alif, $Yaa
         if len(token) > 5:
             if (
-                token.startswith("\u0627")
+                token[0] == "\u0627"  # startswith("\u0627")
                 and token[-3] == "\u0627"
-                and token.endswith("\u064A")
+                and token[-1] == "\u064A"  # endswith("\u064A")
             ):
                 return token[:-3] + token[-2]
 
