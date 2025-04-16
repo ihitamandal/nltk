@@ -30,7 +30,6 @@ from nltk.sem.logic import (
     NegatedExpression,
     Variable,
     VariableExpression,
-    operator,
     unique_variable,
 )
 
@@ -40,11 +39,11 @@ class ProverParseError(Exception):
 
 
 def get_domain(goal, assumptions):
-    if goal is None:
-        all_expressions = assumptions
-    else:
-        all_expressions = assumptions + [-goal]
-    return reduce(operator.or_, (a.constants() for a in all_expressions), set())
+    all_expressions = assumptions if goal is None else assumptions + [-goal]
+    domain = set()
+    for a in all_expressions:
+        domain |= a.constants()
+    return domain
 
 
 class ClosedDomainProver(ProverCommandDecorator):
@@ -54,10 +53,11 @@ class ClosedDomainProver(ProverCommandDecorator):
     """
 
     def assumptions(self):
-        assumptions = [a for a in self._command.assumptions()]
+        assumptions = list(self._command.assumptions())
         goal = self._command.goal()
         domain = get_domain(goal, assumptions)
-        return [self.replace_quants(ex, domain) for ex in assumptions]
+        replace_quants = self.replace_quants
+        return [replace_quants(ex, domain) for ex in assumptions]
 
     def goal(self):
         goal = self._command.goal()
