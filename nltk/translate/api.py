@@ -227,14 +227,12 @@ class Alignment(frozenset):
         Work out the range of the mapping from the given positions.
         If no positions are specified, compute the range of the entire mapping.
         """
-        image = set()
-        if not self._index:
+        if self._index is None:
             self._build_index()
-        if not positions:
-            positions = list(range(len(self._index)))
-        for p in positions:
-            image.update(f for _, f in self._index[p])
-        return sorted(image)
+        if positions is None:
+            positions = range(len(self._index))
+        image = sorted({f for p in positions for _, f in self._index[p]})
+        return image
 
     def __repr__(self):
         """
@@ -253,9 +251,10 @@ class Alignment(frozenset):
         Build a list self._index such that self._index[i] is a list
         of the alignments originating from word i.
         """
-        self._index = [[] for _ in range(self._len + 1)]
+        index = [[] for _ in range(self._len + 1)]
         for p in self:
-            self._index[p[0]].append(p)
+            index[p[0]].append(p)
+        self._index = index
 
 
 def _giza2pair(pair_string):
