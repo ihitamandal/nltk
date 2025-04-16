@@ -74,13 +74,10 @@ def recall(reference, test):
     :param test: A set of values to compare against the reference set.
     :rtype: float or None
     """
-    if not hasattr(reference, "intersection") or not hasattr(test, "intersection"):
-        raise TypeError("reference and test should be sets")
-
-    if len(reference) == 0:
+    ref_len = len(reference)
+    if ref_len == 0:
         return None
-    else:
-        return len(reference.intersection(test)) / len(reference)
+    return len(reference & test) / ref_len
 
 
 def f_measure(reference, test, alpha=0.5):
