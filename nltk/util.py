@@ -755,11 +755,11 @@ def invert_graph(graph):
     :return: the inverted graph
     :rtype: dict(set)
     """
-    inverted = {}
-    for key in graph:
-        for value in graph[key]:
-            inverted.setdefault(value, set()).add(key)
-    return inverted
+    inverted = defaultdict(set)
+    for key, values in graph.items():
+        for value in values:
+            inverted[value].add(key)
+    return dict(inverted)
 
 
 ##########################################################################
