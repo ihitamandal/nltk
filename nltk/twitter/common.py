@@ -51,11 +51,10 @@ def _is_composed_key(field):
 
 
 def _get_key_value_composed(field):
-    out = field.split(HIER_SEPARATOR)
-    # there could be up to 3 levels
-    key = out[0]
-    value = HIER_SEPARATOR.join(out[1:])
-    return key, value
+    split_index = field.find(HIER_SEPARATOR)
+    if split_index == -1:
+        return field, ""
+    return field[:split_index], field[split_index + 1 :]
 
 
 def _get_entity_recursive(json, entity):
