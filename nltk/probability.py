@@ -2283,7 +2283,7 @@ _ADD_LOGS_MAX_DIFF = math.log(1e-30, 2)
 def add_logs(logx, logy):
     """
     Given two numbers ``logx`` = *log(x)* and ``logy`` = *log(y)*, return
-    *log(x+y)*.  Conceptually, this is the same as returning
+    *log(x+y)*. Conceptually, this is the same as returning
     ``log(2**(logx)+2**(logy))``, but the actual implementation
     avoids overflow errors that could result from direct computation.
     """
@@ -2292,7 +2292,7 @@ def add_logs(logx, logy):
     if logy < logx + _ADD_LOGS_MAX_DIFF:
         return logx
     base = min(logx, logy)
-    return base + math.log(2 ** (logx - base) + 2 ** (logy - base), 2)
+    return base + math.log2(1 + 2 ** abs(logx - logy))
 
 
 def sum_logs(logs):
