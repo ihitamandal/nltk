@@ -171,9 +171,7 @@ def parseSubscripts(subscr):
     """
     Parse the subscripts for a primitive category
     """
-    if subscr:
-        return subscr[1:-1].split(",")
-    return []
+    return subscr[1:-1].split(",") if subscr else []
 
 
 def parsePrimitiveCategory(chunks, primitives, families, var):
@@ -183,15 +181,15 @@ def parsePrimitiveCategory(chunks, primitives, families, var):
     If the primitive is the special category 'var', replace it with the
     correct `CCGVar`.
     """
-    if chunks[0] == "var":
-        if chunks[1] is None:
-            if var is None:
-                var = CCGVar()
-            return (var, var)
-
     catstr = chunks[0]
+
+    if catstr == "var":
+        if chunks[1] is None and var is None:
+            var = CCGVar()
+        return (var, var)
+
     if catstr in families:
-        (cat, cvar) = families[catstr]
+        cat, cvar = families[catstr]
         if var is None:
             var = cvar
         else:
@@ -201,8 +199,9 @@ def parsePrimitiveCategory(chunks, primitives, families, var):
     if catstr in primitives:
         subscrs = parseSubscripts(chunks[1])
         return (PrimitiveCategory(catstr, subscrs), var)
+
     raise AssertionError(
-        "String '" + catstr + "' is neither a family nor primitive category."
+        f"String '{catstr}' is neither a family nor primitive category."
     )
 
 
