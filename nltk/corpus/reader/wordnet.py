@@ -489,10 +489,7 @@ class Synset(_WordNetObject):
             reader = self._wordnet_corpus_reader
             reader._load_lang_data(lang)
             i = reader.ss2of(self)
-            if i in reader._lang_data[lang][0]:
-                return reader._lang_data[lang][0][i]
-            else:
-                return []
+            return reader._lang_data[lang][0].get(i, [])
 
     def lemmas(self, lang="eng"):
         """Return all the lemma objects associated with the synset"""
@@ -1104,6 +1101,13 @@ class Synset(_WordNetObject):
             r.sort()
         return r
 
+    def _load_lexnames(self):
+        """Load the lexnames data"""
+        with self.open("lexnames") as fp:
+            for line in fp:
+                index, lexname, _ = line.split()
+                self._lexnames.append(lexname)
+
 
 ######################################################################
 # WordNet Corpus Reader
@@ -1307,14 +1311,12 @@ class WordNetCorpusReader(CorpusReader):
         return self.synset_from_pos_and_offset(of[-1], int(of[:8]))
 
     def ss2of(self, ss):
-        """return the ID of the synset"""
-        if ss:
-            return f"{ss.offset():08d}-{ss.pos()}"
+        """Return the ID of the synset"""
+        return f"{ss.offset():08d}-{ss.pos()}" if ss else ""
 
     def _load_lang_data(self, lang):
-        """load the wordnet data of the requested language from the file to
+        """Load the wordnet data of the requested language from the file to
         the cache, _lang_data"""
-
         if lang in self._lang_data:
             return
 
@@ -1324,16 +1326,14 @@ class WordNetCorpusReader(CorpusReader):
         if lang not in self.langs():
             raise WordNetError("Language is not supported.")
 
-        if self._exomw_reader and lang not in self.omw_langs:
-            reader = self._exomw_reader
-        else:
-            reader = self._omw_reader
+        reader = (
+            self._exomw_reader
+            if self._exomw_reader and lang not in self.omw_langs
+            else self._omw_reader
+        )
 
         prov = self.provenances[lang]
-        if prov in ["cldr", "wikt"]:
-            prov2 = prov
-        else:
-            prov2 = "data"
+        prov2 = prov if prov in ["cldr", "wikt"] else "data"
 
         with reader.open(f"{prov}/wn-{prov2}-{lang.split('_')[0]}.tab") as fp:
             self.custom_lemmas(fp, lang)
