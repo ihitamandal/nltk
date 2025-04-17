@@ -28,9 +28,15 @@ def extract_fields(tweet, fields):
     :rtype: list(str)
     """
     out = []
+    append_out = out.append  # Localize the append method
     for field in fields:
         try:
-            _add_field_to_out(tweet, field, out)
+            if _is_composed_key(field):
+                add_field_to_out = _add_field_to_out
+                key, value = _get_key_value_composed(field)
+                add_field_to_out(tweet[key], value, out)
+            else:
+                append_out(tweet[field])
         except TypeError as e:
             raise RuntimeError(
                 "Fatal error when extracting fields. Cannot find field ", field
@@ -43,7 +49,7 @@ def _add_field_to_out(json, field, out):
         key, value = _get_key_value_composed(field)
         _add_field_to_out(json[key], value, out)
     else:
-        out += [json[field]]
+        out.append(json[field])
 
 
 def _is_composed_key(field):
