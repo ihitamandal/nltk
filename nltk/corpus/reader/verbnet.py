@@ -592,22 +592,27 @@ class VerbnetCorpusReader(XMLCorpusReader):
         :param vnframe: An ElementTree containing the xml contents of
             a VerbNet frame.
         """
+        syntax = vnframe["syntax"]
         pieces = []
-        for element in vnframe["syntax"]:
+        append = pieces.append  # Local function for speed
+
+        for element in syntax:
             piece = element["pos_tag"]
-            modifier_list = []
-            if "value" in element["modifiers"] and element["modifiers"]["value"]:
-                modifier_list.append(element["modifiers"]["value"])
-            modifier_list += [
-                "{}{}".format(restr["value"], restr["type"])
-                for restr in (
-                    element["modifiers"]["selrestrs"]
-                    + element["modifiers"]["synrestrs"]
-                )
-            ]
+            modifiers = element["modifiers"]
+
+            modifier_list = (
+                [modifiers["value"]]
+                if "value" in modifiers and modifiers["value"]
+                else []
+            )
+            modifier_list.extend(
+                f"{restr['value']}{restr['type']}"
+                for restr in (modifiers["selrestrs"] + modifiers["synrestrs"])
+            )
+
             if modifier_list:
-                piece += "[{}]".format(" ".join(modifier_list))
-            pieces.append(piece)
+                piece += f"[{' '.join(modifier_list)}]"
+            append(piece)
 
         return indent + " ".join(pieces)
 
