@@ -210,16 +210,21 @@ def xml_escape(text):
     :type text: str
     :rtype: str
     """
-    return escape(
-        text,
-        entities={
-            r"'": r"&apos;",
-            r'"': r"&quot;",
-            r"|": r"&#124;",
-            r"[": r"&#91;",
-            r"]": r"&#93;",
-        },
+    # Create a translation table for faster replacements
+    translation_table = str.maketrans(
+        {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "'": "&apos;",
+            '"': "&quot;",
+            "|": "&#124;",
+            "[": "&#91;",
+            "]": "&#93;",
+        }
     )
+
+    return text.translate(translation_table)
 
 
 def xml_unescape(text):
