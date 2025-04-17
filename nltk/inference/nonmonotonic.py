@@ -33,18 +33,30 @@ from nltk.sem.logic import (
     operator,
     unique_variable,
 )
+from typing import Optional, Set, List
 
 
 class ProverParseError(Exception):
     pass
 
 
-def get_domain(goal, assumptions):
-    if goal is None:
-        all_expressions = assumptions
-    else:
-        all_expressions = assumptions + [-goal]
-    return reduce(operator.or_, (a.constants() for a in all_expressions), set())
+def get_domain(goal: Optional[Expression], assumptions: List[Expression]) -> Set[str]:
+    """Compute domain of constants in the goal and assumptions.
+
+    Parameters
+    ----------
+    goal: Optional[Expression]
+        The logic expression representing the goal.
+    assumptions: List[Expression]
+        List of logic expressions representing the assumptions.
+
+    Returns
+    -------
+    Set[str]
+        Set of constants found in the goal and assumptions.
+    """
+    all_expressions = assumptions if goal is None else assumptions + [-goal]
+    return {const for expression in all_expressions for const in expression.constants()}
 
 
 class ClosedDomainProver(ProverCommandDecorator):
@@ -53,8 +65,15 @@ class ClosedDomainProver(ProverCommandDecorator):
     proving.
     """
 
-    def assumptions(self):
-        assumptions = [a for a in self._command.assumptions()]
+    def assumptions(self) -> List[Expression]:
+        """Collect assumptions and replace quantifiers with domain values.
+
+        Returns
+        -------
+        List[Expression]
+            List of logic expressions with quantifiers replaced.
+        """
+        assumptions = list(self._command.assumptions())
         goal = self._command.goal()
         domain = get_domain(goal, assumptions)
         return [self.replace_quants(ex, domain) for ex in assumptions]
