@@ -143,8 +143,8 @@ class DependencyGraph:
         """Return a dot representation suitable for using with Graphviz.
 
         >>> dg = DependencyGraph(
-        ...     'John N 2\\n'
-        ...     'loves V 0\\n'
+        ...     'John N 2\n'
+        ...     'loves V 0\n'
         ...     'Mary N 2'
         ... )
         >>> print(dg.to_dot())
@@ -162,27 +162,27 @@ class DependencyGraph:
         }
 
         """
-        # Start the digraph specification
-        s = "digraph G{\n"
-        s += "edge [dir=forward]\n"
-        s += "node [shape=plaintext]\n"
+        sb = ["digraph G{\n", "edge [dir=forward]\n", "node [shape=plaintext]\n"]
 
-        # Draw the remaining nodes
+        append = sb.append  # Local binding for speed
         for node in sorted(self.nodes.values(), key=lambda v: v["address"]):
-            s += '\n{} [label="{} ({})"]'.format(
-                node["address"],
-                node["address"],
-                node["word"],
+            append(
+                '\n{} [label="{} ({})"]'.format(
+                    node["address"],
+                    node["address"],
+                    node["word"],
+                )
             )
             for rel, deps in node["deps"].items():
                 for dep in deps:
-                    if rel is not None:
-                        s += '\n{} -> {} [label="{}"]'.format(node["address"], dep, rel)
-                    else:
-                        s += "\n{} -> {} ".format(node["address"], dep)
-        s += "\n}"
+                    append(
+                        '\n{} -> {} [label="{}"]'.format(node["address"], dep, rel)
+                        if rel is not None
+                        else "\n{} -> {} ".format(node["address"], dep)
+                    )
 
-        return s
+        append("\n}")
+        return "".join(sb)
 
     def _repr_svg_(self):
         """Show SVG representation of the transducer (IPython magic).
