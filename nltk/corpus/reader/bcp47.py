@@ -81,47 +81,54 @@ class BCP47CorpusReader(CorpusReader):
     def data_dict(self, records):
         """Convert the BCP-47 language subtag registry to a dictionary"""
         self.version = records[0].replace("File-Date:", "").strip()
-        dic = {}
-        dic["deprecated"] = {}
-        for label in [
-            "language",
-            "extlang",
-            "script",
-            "region",
-            "variant",
-            "redundant",
-            "grandfathered",
-        ]:
-            dic["deprecated"][label] = {}
+        dic = {
+            "deprecated": {
+                "language": {},
+                "extlang": {},
+                "script": {},
+                "region": {},
+                "variant": {},
+                "redundant": {},
+                "grandfathered": {},
+            }
+        }
+        langcode = self.langcode
+
         for record in records[1:]:
             fields = [field.split(": ") for field in record.strip().split("\n")]
-            typ = fields[0][1]
-            tag = fields[1][1]
+            typ, tag = fields[0][1], fields[1][1]
             if typ not in dic:
                 dic[typ] = {}
             subfields = {}
+            last_key = None
+
             for field in fields[2:]:
                 if len(field) == 2:
-                    [key, val] = field
+                    key, val = field
                     if key not in subfields:
                         subfields[key] = [val]
                     else:  # multiple value
                         subfields[key].append(val)
+                    last_key = key
                 else:  # multiline field
-                    subfields[key][-1] += " " + field[0].strip()
+                    subfields[last_key][-1] += " " + field[0].strip()
+
                 if (
                     "Deprecated" not in record
                     and typ == "language"
-                    and key == "Description"
+                    and last_key == "Description"
                 ):
-                    self.langcode[subfields[key][-1]] = tag
+                    langcode[subfields[last_key][-1]] = tag
+
             for key in subfields:
                 if len(subfields[key]) == 1:  # single value
                     subfields[key] = subfields[key][0]
+
             if "Deprecated" in record:
                 dic["deprecated"][typ][tag] = subfields
             else:
                 dic[typ][tag] = subfields
+
         return dic
 
     def val2str(self, val):
