@@ -238,9 +238,9 @@ class DependencyGraph:
         Returns the number of left children under the node specified
         by the given address.
         """
-        children = chain.from_iterable(self.nodes[node_index]["deps"].values())
+        children = self.nodes[node_index]["deps"].values()
         index = self.nodes[node_index]["address"]
-        return sum(1 for c in children if c < index)
+        return sum(1 for dep_list in children for c in dep_list if c < index)
 
     def right_children(self, node_index):
         """
