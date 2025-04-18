@@ -214,12 +214,13 @@ class StackDecoder:
         :rtype: list(list(int))
         """
         sentence_length = len(src_sentence)
-        phrase_indices = [[] for _ in src_sentence]
-        for start in range(0, sentence_length):
+        phrase_indices = [[] for _ in range(sentence_length)]
+        append = phrase_indices.__getitem__
+        for start in range(sentence_length):
+            append_start = append(start).append
             for end in range(start + 1, sentence_length + 1):
-                potential_phrase = src_sentence[start:end]
-                if potential_phrase in self.phrase_table:
-                    phrase_indices[start].append(end)
+                if src_sentence[start:end] in self.phrase_table:
+                    append_start(end)
         return phrase_indices
 
     def compute_future_scores(self, src_sentence):
