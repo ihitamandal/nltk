@@ -476,11 +476,9 @@ synsets.</li>
 <hr width='100%'>
 """
 
-# HTML oriented functions
-
 
 def _bold(txt):
-    return "<b>%s</b>" % txt
+    return f"<b>{txt}</b>"
 
 
 def _center(txt):
