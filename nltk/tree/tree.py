@@ -862,32 +862,16 @@ class Tree(list):
         return r"\Tree " + re.sub(reserved_chars, r"\\\1", pformat)
 
     def _pformat_flat(self, nodesep, parens, quotes):
-        childstrs = []
-        for child in self:
-            if isinstance(child, Tree):
-                childstrs.append(child._pformat_flat(nodesep, parens, quotes))
-            elif isinstance(child, tuple):
-                childstrs.append("/".join(child))
-            elif isinstance(child, str) and not quotes:
-                childstrs.append("%s" % child)
-            else:
-                childstrs.append(repr(child))
-        if isinstance(self._label, str):
-            return "{}{}{} {}{}".format(
-                parens[0],
-                self._label,
-                nodesep,
-                " ".join(childstrs),
-                parens[1],
-            )
-        else:
-            return "{}{}{} {}{}".format(
-                parens[0],
-                repr(self._label),
-                nodesep,
-                " ".join(childstrs),
-                parens[1],
-            )
+        childstrs = [
+            child._pformat_flat(nodesep, parens, quotes)
+            if isinstance(child, Tree)
+            else "/".join(child)
+            if isinstance(child, tuple)
+            else (f"{child}" if isinstance(child, str) and not quotes else repr(child))
+            for child in self
+        ]
+        label_repr = self._label if isinstance(self._label, str) else repr(self._label)
+        return f"{parens[0]}{label_repr}{nodesep} {' '.join(childstrs)}{parens[1]}"
 
 
 def _child_names(tree):
