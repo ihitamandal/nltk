@@ -546,7 +546,8 @@ def acyclic_dic2tree(node, dic):
     """Convert acyclic dictionary 'dic', where the keys are nodes, and the
     values are lists of children, to output tree suitable for pprint(),
     starting at root 'node', with subtrees as nested lists."""
-    return [node] + [acyclic_dic2tree(child, dic) for child in dic[node]]
+    children = dic[node]
+    return [node, *[acyclic_dic2tree(child, dic) for child in children]]
 
 
 def unweighted_minimum_spanning_dict(tree, children=iter):
