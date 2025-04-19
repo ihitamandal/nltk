@@ -479,17 +479,22 @@ class Agenda:
 
     def pop_first(self):
         """Pop the first expression that appears in the agenda"""
-        for i, s in enumerate(self.sets):
+        for i in range(21):
+            s = self.sets[i]
             if s:
-                if i in [Categories.N_EQ, Categories.ALL]:
+                if i in (Categories.N_EQ, Categories.ALL):
+                    exhausted = set()
                     for ex in s:
                         try:
                             if not ex[0]._exhausted:
                                 s.remove(ex)
                                 return (ex, i)
+                            else:
+                                exhausted.add(ex)
                         except AttributeError:
                             s.remove(ex)
                             return (ex, i)
+                    s -= exhausted
                 else:
                     return (s.pop(), i)
         return ((None, None), None)
