@@ -437,13 +437,10 @@ class ARLSTem2(StemmerI):
         """
         stem the future tense prefixes
         """
-        if len(token) > 4:
-            for pr2 in self.verb_pr22:
-                if token.startswith(pr2):
-                    return token[2:]
-            for pr2 in self.verb_pr2:
-                if token.startswith(pr2):
-                    return token[2:]
+        if len(token) > 4 and (
+            token[:2] in self.verb_pr22 or token[:2] in self.verb_pr2
+        ):
+            return token[2:]
 
     def verb_t6(self, token):
         """
