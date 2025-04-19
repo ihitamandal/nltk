@@ -29,6 +29,7 @@ other than English from the Open Multilingual Wordnet
 https://omwn.org/
 
 """
+from __future__ import annotations
 
 import math
 import os
@@ -38,6 +39,7 @@ from collections import defaultdict, deque
 from functools import total_ordering
 from itertools import chain, islice
 from operator import itemgetter
+from typing import Optional
 
 from nltk.corpus.reader import CorpusReader
 from nltk.internals import deprecated
@@ -472,7 +474,8 @@ class Synset(_WordNetObject):
         """Return examples in specified language"""
         return self._doc("exe", self._examples, lang=lang)
 
-    def lexname(self):
+    def lexname(self) -> Optional[str]:
+        """Return the lexicographer name."""
         return self._lexname
 
     def _needs_root(self):
@@ -1103,6 +1106,21 @@ class Synset(_WordNetObject):
         if sort:
             r.sort()
         return r
+
+    def _initialize_attributes(self) -> None:
+        """Initialize attributes to their default values."""
+        self._pos = None
+        self._offset = None
+        self._name = None
+        self._frame_ids = []
+        self._lemmas = []
+        self._lemma_names = []
+        self._definition = None
+        self._examples = []
+        self._lexname = None
+        self._all_hypernyms = None
+        self._pointers = defaultdict(set)
+        self._lemma_pointers = defaultdict(list)
 
 
 ######################################################################
