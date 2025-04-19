@@ -90,16 +90,14 @@ class VerbnetCorpusReader(XMLCorpusReader):
         if vnclass is None:
             return sorted(self._wordnet_to_class.keys())
         else:
-            # [xx] should this include subclass members?
             if isinstance(vnclass, str):
                 vnclass = self.vnclass(vnclass)
-            return sum(
-                (
-                    member.get("wn", "").split()
-                    for member in vnclass.findall("MEMBERS/MEMBER")
-                ),
-                [],
-            )
+            # Use generator for summing wn tags
+            return [
+                wn
+                for member in vnclass.findall("MEMBERS/MEMBER")
+                for wn in member.get("wn", "").split()
+            ]
 
     def classids(self, lemma=None, wordnetid=None, fileid=None, classid=None):
         """
@@ -141,14 +139,12 @@ class VerbnetCorpusReader(XMLCorpusReader):
             ``'put-9.1'``) or a short VerbNet class identifier (such as
             ``'9.1'``).
         """
-        # File identifier: just return the xml.
         if fileid_or_classid in self._fileids:
             return self.xml(fileid_or_classid)
 
-        # Class identifier: get the xml, and find the right elt.
         classid = self.longid(fileid_or_classid)
         if classid in self._class_to_fileid:
-            fileid = self._class_to_fileid[self.longid(classid)]
+            fileid = self._class_to_fileid[classid]
             tree = self.xml(fileid)
             if classid == tree.get("ID"):
                 return tree
@@ -158,7 +154,6 @@ class VerbnetCorpusReader(XMLCorpusReader):
                         return subclass
                 else:
                     assert False  # we saw it during _index()!
-
         else:
             raise ValueError(f"Unknown identifier {fileid_or_classid}")
 
