@@ -469,7 +469,8 @@ class FunctionBackedMaxentFeatureEncoding(MaxentFeatureEncodingI):
     def labels(self):
         return self._labels
 
-    def describe(self, fid):
+    @staticmethod
+    def describe(fid):
         return "no description available"
 
 
