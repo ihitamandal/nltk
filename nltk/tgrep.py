@@ -827,15 +827,18 @@ def _tgrep_exprs_action(_s, _l, tokens):
     """
     if len(tokens) == 1:
         return lambda n, m=None, l=None: tokens[0](n, None, {})
-    # filter out all the semicolons
-    tokens = [x for x in tokens if x != ";"]
-    # collect all macro definitions
+
+    # Initialize macro_dict and filter tokens in a single pass
     macro_dict = {}
-    macro_defs = [tok for tok in tokens if isinstance(tok, dict)]
-    for macro_def in macro_defs:
-        macro_dict.update(macro_def)
-    # collect all tgrep expressions
-    tgrep_exprs = [tok for tok in tokens if not isinstance(tok, dict)]
+    tgrep_exprs = []
+
+    for tok in tokens:
+        if tok == ";":
+            continue
+        if isinstance(tok, dict):
+            macro_dict.update(tok)
+        else:
+            tgrep_exprs.append(tok)
 
     # create a new scope for the node label dictionary
     def top_level_pred(n, m=macro_dict, l=None):
