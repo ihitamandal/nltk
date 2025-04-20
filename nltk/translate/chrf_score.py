@@ -9,6 +9,7 @@
 """ ChrF score implementation """
 import re
 from collections import Counter, defaultdict
+from typing import Union
 
 from nltk.util import ngrams
 
@@ -98,13 +99,27 @@ def sentence_chrf(
     )
 
 
-def _preprocess(sent, ignore_whitespace):
-    if type(sent) != str:
-        # turn list of tokens into a string
+def _preprocess(sent: Union[str, list[str]], ignore_whitespace: bool) -> str:
+    """Preprocess the input sentence.
+
+    Parameters
+    ----------
+    sent : str or list of str
+        The input sentence or list of tokens to preprocess.
+    ignore_whitespace : bool
+        Flag to indicate whether to remove whitespace.
+
+    Returns
+    -------
+    str
+        The preprocessed sentence.
+    """
+    if not isinstance(sent, str):
         sent = " ".join(sent)
 
     if ignore_whitespace:
-        sent = re.sub(r"\s+", "", sent)
+        sent = "".join(ch for ch in sent if not ch.isspace())
+
     return sent
 
 
