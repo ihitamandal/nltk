@@ -125,29 +125,24 @@ class CCGLexicon:
         return string
 
 
-# -----------
-# Parsing lexicons
-# -----------
-
-
 def matchBrackets(string):
     """
     Separate the contents matching the first set of brackets from the rest of
     the input.
     """
-    rest = string[1:]
-    inside = "("
-
-    while rest != "" and not rest.startswith(")"):
-        if rest.startswith("("):
-            (part, rest) = matchBrackets(rest)
-            inside = inside + part
-        else:
-            inside = inside + rest[0]
-            rest = rest[1:]
-    if rest.startswith(")"):
-        return (inside + ")", rest[1:])
-    raise AssertionError("Unmatched bracket in string '" + string + "'")
+    open_brackets = 0
+    idx = 0
+    for char in string:
+        if char == "(":
+            open_brackets += 1
+        elif char == ")":
+            open_brackets -= 1
+        idx += 1
+        if open_brackets == 0:
+            break
+    if open_brackets != 0:
+        raise AssertionError(f"Unmatched bracket in string '{string}'")
+    return string[:idx], string[idx:]
 
 
 def nextCategory(string):
@@ -290,6 +285,26 @@ def fromstring(lex_str, include_semantics=False):
 @deprecated("Use fromstring() instead.")
 def parseLexicon(lex_str):
     return fromstring(lex_str)
+
+
+def matchBrackets(string):
+    """
+    Separate the contents matching the first set of brackets from the rest of
+    the input.
+    """
+    open_brackets = 0
+    idx = 0
+    for char in string:
+        if char == "(":
+            open_brackets += 1
+        elif char == ")":
+            open_brackets -= 1
+        idx += 1
+        if open_brackets == 0:
+            break
+    if open_brackets != 0:
+        raise AssertionError(f"Unmatched bracket in string '{string}'")
+    return string[:idx], string[idx:]
 
 
 openccg_tinytiny = fromstring(
