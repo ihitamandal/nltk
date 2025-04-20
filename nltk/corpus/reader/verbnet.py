@@ -15,6 +15,8 @@ https://verbs.colorado.edu/~mpalmer/projects/verbnet.html
 import re
 import textwrap
 from collections import defaultdict
+from functools import lru_cache
+from xml.etree.ElementTree import Element
 
 from nltk.corpus.reader.xmldocs import XMLCorpusReader
 
@@ -82,24 +84,29 @@ class VerbnetCorpusReader(XMLCorpusReader):
                 vnclass = self.vnclass(vnclass)
             return [member.get("name") for member in vnclass.findall("MEMBERS/MEMBER")]
 
-    def wordnetids(self, vnclass=None):
-        """
-        Return a list of all wordnet identifiers that appear in any
-        class, or in ``classid`` if specified.
+    def wordnetids(self, vnclass: str | None = None) -> list[str]:
+        """Return a list of all wordnet identifiers that appear in any
+        class, or in the specified `vnclass`.
+
+        Parameters
+        ----------
+        vnclass : str, optional
+            The VerbNet class identifier, by default None.
+
+        Returns
+        -------
+        list[str]
+            List of wordnet identifiers.
         """
         if vnclass is None:
             return sorted(self._wordnet_to_class.keys())
-        else:
-            # [xx] should this include subclass members?
-            if isinstance(vnclass, str):
-                vnclass = self.vnclass(vnclass)
-            return sum(
-                (
-                    member.get("wn", "").split()
-                    for member in vnclass.findall("MEMBERS/MEMBER")
-                ),
-                [],
-            )
+        if isinstance(vnclass, str):
+            vnclass = self.vnclass(vnclass)
+        return [
+            wn_id
+            for member in vnclass.findall("MEMBERS/MEMBER")
+            for wn_id in member.get("wn", "").split()
+        ]
 
     def classids(self, lemma=None, wordnetid=None, fileid=None, classid=None):
         """
@@ -129,23 +136,29 @@ class VerbnetCorpusReader(XMLCorpusReader):
         else:
             return sorted(self._class_to_fileid.keys())
 
-    def vnclass(self, fileid_or_classid):
+    @lru_cache(maxsize=128)
+    def vnclass(self, fileid_or_classid: str) -> Element:
         """Returns VerbNet class ElementTree
 
-        Return an ElementTree containing the xml for the specified
+        Return an ElementTree containing the XML for the specified
         VerbNet class.
 
-        :param fileid_or_classid: An identifier specifying which class
-            should be returned.  Can be a file identifier (such as
-            ``'put-9.1.xml'``), or a VerbNet class identifier (such as
-            ``'put-9.1'``) or a short VerbNet class identifier (such as
-            ``'9.1'``).
+        Parameters
+        ----------
+        fileid_or_classid : str
+            An identifier specifying which class should be returned.
+            Can be a file identifier (such as 'put-9.1.xml'), or a
+            VerbNet class identifier (such as 'put-9.1') or a short
+            VerbNet class identifier (such as '9.1').
+
+        Returns
+        -------
+        Element
+            The requested VerbNet class ElementTree.
         """
-        # File identifier: just return the xml.
         if fileid_or_classid in self._fileids:
             return self.xml(fileid_or_classid)
 
-        # Class identifier: get the xml, and find the right elt.
         classid = self.longid(fileid_or_classid)
         if classid in self._class_to_fileid:
             fileid = self._class_to_fileid[self.longid(classid)]
@@ -156,9 +169,7 @@ class VerbnetCorpusReader(XMLCorpusReader):
                 for subclass in tree.findall(".//VNSUBCLASS"):
                     if classid == subclass.get("ID"):
                         return subclass
-                else:
-                    assert False  # we saw it during _index()!
-
+                assert False
         else:
             raise ValueError(f"Unknown identifier {fileid_or_classid}")
 
