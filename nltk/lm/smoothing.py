@@ -22,15 +22,10 @@ def _count_values_gt_zero(distribution):
     Assumes distribution is either a mapping with counts as values or
     an instance of `nltk.ConditionalFreqDist`.
     """
-    as_count = (
-        methodcaller("N")
-        if isinstance(distribution, ConditionalFreqDist)
-        else lambda count: count
-    )
-    # We explicitly check that values are > 0 to guard against negative counts.
-    return sum(
-        1 for dist_or_count in distribution.values() if as_count(dist_or_count) > 0
-    )
+    if isinstance(distribution, ConditionalFreqDist):
+        return sum(1 for dist in distribution.values() if dist.N() > 0)
+    else:
+        return sum(1 for count in distribution.values() if count > 0)
 
 
 class WittenBell(Smoothing):
@@ -111,17 +106,20 @@ class KneserNey(Smoothing):
     def _continuation_counts(self, word, context=tuple()):
         """Count continuations that end with context and word.
 
-        Continuations track unique ngram "types", regardless of how many
+        Continuations track unique n-gram "types", regardless of how many
         instances were observed for each "type".
-        This is different than raw ngram counts which track number of instances.
+        This is different than raw n-gram counts which track number of instances.
         """
-        higher_order_ngrams_with_context = (
-            counts
-            for prefix_ngram, counts in self.counts[len(context) + 2].items()
-            if prefix_ngram[1:] == context
-        )
-        higher_order_ngrams_with_word_count, total = 0, 0
-        for counts in higher_order_ngrams_with_context:
-            higher_order_ngrams_with_word_count += int(counts[word] > 0)
-            total += _count_values_gt_zero(counts)
+        len_context = len(context)
+        counts_len_context_plus_2 = self.counts[len_context + 2]
+
+        higher_order_ngrams_with_word_count = 0
+        total = 0
+
+        for prefix_ngram, counts in counts_len_context_plus_2.items():
+            if prefix_ngram[1:] == context:
+                if counts[word] > 0:
+                    higher_order_ngrams_with_word_count += 1
+                total += _count_values_gt_zero(counts)
+
         return higher_order_ngrams_with_word_count, total
