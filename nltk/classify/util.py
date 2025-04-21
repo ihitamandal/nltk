@@ -168,16 +168,38 @@ def names_demo_features(name):
     return features
 
 
-def binary_names_demo_features(name):
-    features = {}
+def binary_names_demo_features(name: str) -> dict[str, bool | int]:
+    """Generate name features including counts and boolean states.
+
+    Parameters
+    ----------
+    name : str
+        The input name string.
+
+    Returns
+    -------
+    dict[str, bool | int]
+        A dictionary containing features about the input name.
+    """
+
+    features: dict[str, bool | int] = {}
+    lower_name = name.lower()
+    first_char = lower_name[0]
+    last_char = lower_name[-1]
+    vowels = set("aeiouy")
+
     features["alwayson"] = True
-    features["startswith(vowel)"] = name[0].lower() in "aeiouy"
-    features["endswith(vowel)"] = name[-1].lower() in "aeiouy"
+    features["startswith(vowel)"] = first_char in vowels
+    features["endswith(vowel)"] = last_char in vowels
+
     for letter in "abcdefghijklmnopqrstuvwxyz":
-        features["count(%s)" % letter] = name.lower().count(letter)
-        features["has(%s)" % letter] = letter in name.lower()
-        features["startswith(%s)" % letter] = letter == name[0].lower()
-        features["endswith(%s)" % letter] = letter == name[-1].lower()
+        count = lower_name.count(letter)
+        has_letter = count > 0
+        features[f"count({letter})"] = count
+        features[f"has({letter})"] = has_letter
+        features[f"startswith({letter})"] = letter == first_char
+        features[f"endswith({letter})"] = letter == last_char
+
     return features
 
 
