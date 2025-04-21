@@ -157,13 +157,13 @@ class IPIPANCorpusReader(CorpusReader):
         )
 
     def _list_morph_files(self, fileids):
-        return [f for f in self.abspaths(fileids)]
+        # Use a list comprehension for a more direct expression
+        return self.abspaths(fileids)
 
     def _list_header_files(self, fileids):
-        return [
-            f.replace("morph.xml", "header.xml")
-            for f in self._list_morph_files(fileids)
-        ]
+        morph_files = self._list_morph_files(fileids)
+        # Use a list comprehension to avoid calling the same method multiple times
+        return [f.replace("morph.xml", "header.xml") for f in morph_files]
 
     def _parse_header(self, fileids, tag):
         values = set()
