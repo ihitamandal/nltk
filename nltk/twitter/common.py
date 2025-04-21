@@ -46,16 +46,37 @@ def _add_field_to_out(json, field, out):
         out += [json[field]]
 
 
-def _is_composed_key(field):
+def _is_composed_key(field: str) -> bool:
+    """Check if the given field contains a hierarchical separator.
+
+    Parameters
+    ----------
+    field : str
+        The field to check for a hierarchical separator.
+
+    Returns
+    -------
+    bool
+        True if the field contains a hierarchical separator; False otherwise.
+    """
     return HIER_SEPARATOR in field
 
 
-def _get_key_value_composed(field):
-    out = field.split(HIER_SEPARATOR)
-    # there could be up to 3 levels
-    key = out[0]
-    value = HIER_SEPARATOR.join(out[1:])
-    return key, value
+def _get_key_value_composed(field: str) -> tuple[str, str]:
+    """Split the field into key and value based on the hierarchical separator.
+
+    Parameters
+    ----------
+    field : str
+        The field to split.
+
+    Returns
+    -------
+    tuple[str, str]
+        A tuple containing the key and the joined remaining parts as the value.
+    """
+    parts = field.split(HIER_SEPARATOR, 1)
+    return parts[0], parts[1] if len(parts) > 1 else ""
 
 
 def _get_entity_recursive(json, entity):
@@ -215,21 +236,39 @@ def json2csv_entities(
     outf.close()
 
 
-def get_header_field_list(main_fields, entity_type, entity_fields):
-    if _is_composed_key(entity_type):
-        key, value = _get_key_value_composed(entity_type)
-        main_entity = key
-        sub_entity = value
-    else:
-        main_entity = None
-        sub_entity = entity_type
+def get_header_field_list(
+    main_fields: list[str], entity_type: str, entity_fields: list[str]
+) -> list[str]:
+    """Construct the header field list based on the entity type and its fields.
 
-    if main_entity:
-        output1 = [HIER_SEPARATOR.join([main_entity, x]) for x in main_fields]
+    Parameters
+    ----------
+    main_fields : list[str]
+        List of main fields.
+    entity_type : str
+        The type of the entity, which may contain a hierarchical separator.
+    entity_fields : list[str]
+        List of fields belonging to the entity.
+
+    Returns
+    -------
+    list[str]
+        The combined list of header fields.
+    """
+    if _is_composed_key(entity_type):
+        main_entity, sub_entity = _get_key_value_composed(entity_type)
     else:
-        output1 = main_fields
-    output2 = [HIER_SEPARATOR.join([sub_entity, x]) for x in entity_fields]
-    return output1 + output2
+        main_entity, sub_entity = None, entity_type
+
+    main_fields_constructed = (
+        [f"{main_entity}{HIER_SEPARATOR}{field}" for field in main_fields]
+        if main_entity
+        else main_fields
+    )
+
+    return main_fields_constructed + [
+        f"{sub_entity}{HIER_SEPARATOR}{field}" for field in entity_fields
+    ]
 
 
 def _write_to_file(object_fields, items, entity_fields, writer):
