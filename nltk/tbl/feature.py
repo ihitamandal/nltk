@@ -156,10 +156,17 @@ class Feature(metaclass=ABCMeta):
         :returns: list of Features
         :raises ValueError: for non-positive window lengths
         """
-        if not all(x > 0 for x in winlens):
+        if any(x <= 0 for x in winlens):
             raise ValueError(f"non-positive window length in {winlens}")
-        xs = (starts[i : i + w] for w in winlens for i in range(len(starts) - w + 1))
-        return [cls(x) for x in xs if not (excludezero and 0 in x)]
+
+        features = []
+        for w in winlens:
+            for i in range(len(starts) - w + 1):
+                window = starts[i : i + w]
+                if not (excludezero and 0 in window):
+                    features.append(cls(window))
+
+        return features
 
     def issuperset(self, other):
         """
