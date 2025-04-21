@@ -276,72 +276,38 @@ class DependencyGraph:
         identified, for examlple, `ROOT`, `null` or `TOP`.
 
         """
-
-        def extract_3_cells(cells, index):
-            word, tag, head = cells
-            return index, word, word, tag, tag, "", head, ""
-
-        def extract_4_cells(cells, index):
-            word, tag, head, rel = cells
-            return index, word, word, tag, tag, "", head, rel
-
-        def extract_7_cells(cells, index):
-            line_index, word, lemma, tag, _, head, rel = cells
-            try:
-                index = int(line_index)
-            except ValueError:
-                # index can't be parsed as an integer, use default
-                pass
-            return index, word, lemma, tag, tag, "", head, rel
-
-        def extract_10_cells(cells, index):
-            line_index, word, lemma, ctag, tag, feats, head, rel, _, _ = cells
-            try:
-                index = int(line_index)
-            except ValueError:
-                # index can't be parsed as an integer, use default
-                pass
-            return index, word, lemma, ctag, tag, feats, head, rel
-
         extractors = {
-            3: extract_3_cells,
-            4: extract_4_cells,
-            7: extract_7_cells,
-            10: extract_10_cells,
+            3: self.extract_3_cells,
+            4: self.extract_4_cells,
+            7: self.extract_7_cells,
+            10: self.extract_10_cells,
         }
 
         if isinstance(input_, str):
-            input_ = (line for line in input_.split("\n"))
-
-        lines = (l.rstrip() for l in input_)
-        lines = (l for l in lines if l)
+            input_ = input_.split("\n")
 
         cell_number = None
-        for index, line in enumerate(lines, start=1):
+        for index, line in enumerate(input_, start=1):
+            line = line.rstrip()
+            if not line:
+                continue
+
             cells = line.split(cell_separator)
             if cell_number is None:
                 cell_number = len(cells)
-            else:
-                assert cell_number == len(cells)
+                if cell_extractor is None:
+                    cell_extractor = extractors.get(cell_number, None)
+                    if cell_extractor is None:
+                        raise ValueError(
+                            f"Number of tab-delimited fields ({cell_number}) not supported by "
+                            "CoNLL(10) or Malt-Tab(4) format"
+                        )
+            elif cell_number != len(cells):
+                raise ValueError("Inconsistent number of columns in the input.")
 
-            if cell_extractor is None:
-                try:
-                    cell_extractor = extractors[cell_number]
-                except KeyError as e:
-                    raise ValueError(
-                        "Number of tab-delimited fields ({}) not supported by "
-                        "CoNLL(10) or Malt-Tab(4) format".format(cell_number)
-                    ) from e
-
-            try:
-                index, word, lemma, ctag, tag, feats, head, rel = cell_extractor(
-                    cells, index
-                )
-            except (TypeError, ValueError):
-                # cell_extractor doesn't take 2 arguments or doesn't return 8
-                # values; assume the cell_extractor is an older external
-                # extractor and doesn't accept or return an index.
-                word, lemma, ctag, tag, feats, head, rel = cell_extractor(cells)
+            index, word, lemma, ctag, tag, feats, head, rel = cell_extractor(
+                cells, index
+            )
 
             if head == "_":
                 continue
@@ -363,18 +329,15 @@ class DependencyGraph:
                 }
             )
 
-            # Make sure that the fake root node has labeled dependencies.
-            if (cell_number == 3) and (head == 0):
-                rel = top_relation_label
+            rel = top_relation_label if cell_number == 3 and head == 0 else rel
             self.nodes[head]["deps"][rel].append(index)
 
-        if self.nodes[0]["deps"][top_relation_label]:
-            root_address = self.nodes[0]["deps"][top_relation_label][0]
-            self.root = self.nodes[root_address]
-            self.top_relation_label = top_relation_label
+        root_deps = self.nodes[0]["deps"].get(top_relation_label, [])
+        if root_deps:
+            self.root = self.nodes[root_deps[0]]
         else:
             warnings.warn(
-                "The graph doesn't contain a node " "that depends on the root element."
+                "The graph doesn't contain a node that depends on the root element."
             )
 
     def _word(self, node, filter=True):
@@ -545,6 +508,34 @@ class DependencyGraph:
         g.add_edges_from(nx_edgelist)
 
         return g
+
+    @staticmethod
+    def extract_3_cells(cells, index):
+        word, tag, head = cells
+        return index, word, word, tag, tag, "", head, ""
+
+    @staticmethod
+    def extract_4_cells(cells, index):
+        word, tag, head, rel = cells
+        return index, word, word, tag, tag, "", head, rel
+
+    @staticmethod
+    def extract_7_cells(cells, index):
+        line_index, word, lemma, tag, _, head, rel = cells
+        try:
+            index = int(line_index)
+        except ValueError:
+            pass
+        return index, word, lemma, tag, tag, "", head, rel
+
+    @staticmethod
+    def extract_10_cells(cells, index):
+        line_index, word, lemma, ctag, tag, feats, head, rel, _, _ = cells
+        try:
+            index = int(line_index)
+        except ValueError:
+            pass
+        return index, word, lemma, ctag, tag, feats, head, rel
 
 
 def dot2img(dot_string, t="svg"):
