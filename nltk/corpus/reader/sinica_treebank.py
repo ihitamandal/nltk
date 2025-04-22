@@ -38,6 +38,8 @@ Chen Keh-Jiann and Yu-Ming Hsieh (2004) Chinese Treebanks and Grammar
 Extraction, Proceedings of IJCNLP-04, pp560-565.
 """
 
+import re
+
 from nltk.corpus.reader.api import *
 from nltk.corpus.reader.util import *
 from nltk.tag import map_tag
@@ -64,12 +66,10 @@ class SinicaTreebankCorpusReader(SyntaxCorpusReader):
         return sinica_parse(sent)
 
     def _tag(self, sent, tagset=None):
-        tagged_sent = [(w, t) for (t, w) in TAGWORD.findall(sent)]
+        matches = TAGWORD.findall(sent)
         if tagset and tagset != self._tagset:
-            tagged_sent = [
-                (w, map_tag(self._tagset, tagset, t)) for (w, t) in tagged_sent
-            ]
-        return tagged_sent
+            return [(w, map_tag(self._tagset, tagset, t)) for t, w in matches]
+        return [(w, t) for t, w in matches]
 
     def _word(self, sent):
         return WORD.findall(sent)
