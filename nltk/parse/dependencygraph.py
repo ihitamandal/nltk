@@ -17,6 +17,7 @@ The input is assumed to be in Malt-TAB format
 import subprocess
 import warnings
 from collections import defaultdict
+from functools import lru_cache
 from itertools import chain
 from pprint import pformat
 
@@ -233,14 +234,23 @@ class DependencyGraph:
                 for tree_str in infile.read().split("\n\n")
             ]
 
-    def left_children(self, node_index):
+    @lru_cache(maxsize=1024)
+    def left_children(self, node_index: int) -> int:
+        """Calculates the number of left children for a given node index using LRU caching.
+
+        Parameters
+        ----------
+        node_index : int
+            The index of the node in the graph.
+
+        Returns
+        -------
+        int
+            The number of left children of the specified node.
         """
-        Returns the number of left children under the node specified
-        by the given address.
-        """
-        children = chain.from_iterable(self.nodes[node_index]["deps"].values())
+        node_deps = self.nodes[node_index]["deps"]  # Reduced attribute access
         index = self.nodes[node_index]["address"]
-        return sum(1 for c in children if c < index)
+        return sum(1 for dep_list in node_deps.values() for c in dep_list if c < index)
 
     def right_children(self, node_index):
         """
