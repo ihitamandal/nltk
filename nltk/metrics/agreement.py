@@ -70,6 +70,7 @@ Expected results from the Artstein and Poesio survey paper:
 """
 
 import logging
+from collections import defaultdict
 from itertools import groupby
 from operator import itemgetter
 
@@ -198,14 +199,14 @@ class AnnotationTask:
         """
         total = 0
         n = 0
-        s = self.C.copy()
-        for cA in self.C:
-            s.remove(cA)
-            for cB in s:
+        s = list(
+            self.C
+        )  # convert to list to avoid issues with removing elements while iterating
+        for i, cA in enumerate(s):
+            for cB in s[i + 1 :]:
                 total += function(cA, cB)
                 n += 1
-        ret = total / n
-        return ret
+        return total / n
 
     def avg_Ao(self):
         """Average observed agreement across all coders and items."""
@@ -255,9 +256,16 @@ class AnnotationTask:
     def Ae_kappa(self, cA, cB):
         Ae = 0.0
         nitems = float(len(self.I))
-        label_freqs = ConditionalFreqDist((x["labels"], x["coder"]) for x in self.data)
-        for k in label_freqs.conditions():
-            Ae += (label_freqs[k][cA] / nitems) * (label_freqs[k][cB] / nitems)
+
+        # Using defaultdict for more efficient frequency counting
+        label_freqs = defaultdict(lambda: defaultdict(int))
+        for x in self.data:
+            label_freqs[x["labels"]][x["coder"]] += 1
+
+        for labels in label_freqs:
+            Ae += (label_freqs[labels][cA] / nitems) * (
+                label_freqs[labels][cB] / nitems
+            )
         return Ae
 
     def kappa_pairwise(self, cA, cB):
@@ -277,7 +285,6 @@ class AnnotationTask:
     def multi_kappa(self):
         """Davies and Fleiss 1982
         Averages over observed and expected agreements for each coder pair.
-
         """
         Ae = self._pairwise_average(self.Ae_kappa)
         return (self.avg_Ao() - Ae) / (1.0 - Ae)
@@ -342,6 +349,14 @@ class AnnotationTask:
         return self._pairwise_average(
             lambda cA, cB: self.weighted_kappa_pairwise(cA, cB, max_distance)
         )
+
+    def load_array(self, data):
+        """Load 3-tuple data into the annotation task."""
+        for coder, item, label in data:
+            self.data.append({"coder": coder, "item": item, "labels": label})
+            self.I.add(item)
+            self.C.add(coder)
+            self.K.add(label)
 
 
 if __name__ == "__main__":
