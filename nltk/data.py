@@ -226,24 +226,29 @@ def normalize_resource_name(resource_name, allow_relative=True, relative_path=No
     >>> windows or normalize_resource_name('/dir/file', True, '/') == '/dir/file'
     True
     """
-    is_dir = bool(re.search(r"[\\/.]$", resource_name)) or resource_name.endswith(
-        os.path.sep
-    )
-    if sys.platform.startswith("win"):
+    is_dir = resource_name.endswith(("/", "\\", "."))
+    platform_is_win = sys.platform.startswith("win")
+
+    if platform_is_win:
         resource_name = resource_name.lstrip("/")
     else:
         resource_name = re.sub(r"^/+", "/", resource_name)
+
     if allow_relative:
         resource_name = os.path.normpath(resource_name)
     else:
-        if relative_path is None:
-            relative_path = os.curdir
-        resource_name = os.path.abspath(os.path.join(relative_path, resource_name))
+        resource_name = os.path.abspath(
+            os.path.join(relative_path or os.curdir, resource_name)
+        )
+
     resource_name = resource_name.replace("\\", "/").replace(os.path.sep, "/")
-    if sys.platform.startswith("win") and os.path.isabs(resource_name):
+
+    if platform_is_win and os.path.isabs(resource_name):
         resource_name = "/" + resource_name
+
     if is_dir and not resource_name.endswith("/"):
         resource_name += "/"
+
     return resource_name
 
 
