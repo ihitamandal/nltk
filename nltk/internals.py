@@ -17,6 +17,7 @@ import sys
 import textwrap
 import types
 import warnings
+from types import MethodType
 from xml.etree import ElementTree
 
 ##########################################################################
@@ -312,40 +313,30 @@ def read_number(s, start_position):
         return int(m.group()), m.end()
 
 
-######################################################################
-# Check if a method has been overridden
-######################################################################
+def overridden(method: MethodType) -> bool:
+    """Check if the given method overrides a method from a base class.
 
+    Parameters
+    ----------
+    method : MethodType
+        The instance method to check for overriding.
 
-def overridden(method):
+    Returns
+    -------
+    bool
+        True if the method overrides a superclass method, otherwise False.
+
+    Raises
+    ------
+    TypeError
+        If the provided method is not an instance method.
     """
-    :return: True if ``method`` overrides some method with the same
-        name in a base class.  This is typically used when defining
-        abstract base classes or interfaces, to allow subclasses to define
-        either of two related methods:
-
-        >>> class EaterI:
-        ...     '''Subclass must define eat() or batch_eat().'''
-        ...     def eat(self, food):
-        ...         if overridden(self.batch_eat):
-        ...             return self.batch_eat([food])[0]
-        ...         else:
-        ...             raise NotImplementedError()
-        ...     def batch_eat(self, foods):
-        ...         return [self.eat(food) for food in foods]
-
-    :type method: instance method
-    """
-    if isinstance(method, types.MethodType) and method.__self__.__class__ is not None:
-        name = method.__name__
-        funcs = [
-            cls.__dict__[name]
-            for cls in _mro(method.__self__.__class__)
-            if name in cls.__dict__
-        ]
-        return len(funcs) > 1
-    else:
+    if not isinstance(method, MethodType):
         raise TypeError("Expected an instance method.")
+    name = method.__name__
+    cls_mro = _mro(method.__self__.__class__)
+    funcs = [cls.__dict__[name] for cls in cls_mro if name in cls.__dict__]
+    return len(funcs) > 1
 
 
 def _mro(cls):

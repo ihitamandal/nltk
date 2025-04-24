@@ -18,6 +18,9 @@ category.
 classification", which is like single-category classification except
 that each text belongs to zero or more categories.
 """
+from functools import lru_cache
+from typing import List, Type
+
 from nltk.internals import overridden
 
 ##//////////////////////////////////////////////////////
@@ -111,10 +114,23 @@ class MultiClassifierI:
         """
         raise NotImplementedError()
 
-    def classify(self, featureset):
-        """
-        :return: the most appropriate set of labels for the given featureset.
-        :rtype: set(label)
+    def classify(self, featureset: object) -> set:
+        """Return the most appropriate set of labels for the given featureset.
+
+        Parameters
+        ----------
+        featureset : object
+            The feature set for classification.
+
+        Returns
+        -------
+        set
+            The set of labels for the featureset.
+
+        Raises
+        ------
+        NotImplementedError
+            If the classify_many method is not overridden in the subclass.
         """
         if overridden(self.classify_many):
             return self.classify_many([featureset])[0]
@@ -132,13 +148,18 @@ class MultiClassifierI:
         else:
             raise NotImplementedError()
 
-    def classify_many(self, featuresets):
-        """
-        Apply ``self.classify()`` to each element of ``featuresets``.  I.e.:
+    def classify_many(self, featuresets: List[object]) -> List[set]:
+        """Apply classify method to each element of featuresets.
 
-            return [self.classify(fs) for fs in featuresets]
+        Parameters
+        ----------
+        featuresets : List[object]
+            The list of feature sets for classification.
 
-        :rtype: list(set(label))
+        Returns
+        -------
+        List[set]
+            The list of labeled sets for each featureset.
         """
         return [self.classify(fs) for fs in featuresets]
 
@@ -151,6 +172,23 @@ class MultiClassifierI:
         :rtype: list(ProbDistI)
         """
         return [self.prob_classify(fs) for fs in featuresets]
+
+
+@lru_cache(maxsize=128)
+def _mro(cls: Type) -> List[Type]:
+    """Compute and cache the method resolution order of the class.
+
+    Parameters
+    ----------
+    cls : Type
+        The class to compute the MRO for.
+
+    Returns
+    -------
+    List[Type]
+        A list of classes in the method resolution order.
+    """
+    return list(cls.__mro__)
 
 
 # # [XX] IN PROGRESS:
