@@ -285,10 +285,13 @@ class AnnotationTask:
     def Disagreement(self, label_freqs):
         total_labels = sum(label_freqs.values())
         pairs = 0.0
-        for j, nj in label_freqs.items():
-            for l, nl in label_freqs.items():
-                pairs += float(nj * nl) * self.distance(l, j)
-        return 1.0 * pairs / (total_labels * (total_labels - 1))
+        items = list(label_freqs.items())
+        for i in range(len(items)):
+            j, nj = items[i]
+            pairs += nj * (nj - 1) * self.distance(j, j)  # pairs with itself
+            for l, nl in items[i + 1 :]:
+                pairs += 2 * nj * nl * self.distance(j, l)
+        return pairs / (total_labels * (total_labels - 1))
 
     def alpha(self):
         """Krippendorff 1980"""
@@ -342,6 +345,20 @@ class AnnotationTask:
         return self._pairwise_average(
             lambda cA, cB: self.weighted_kappa_pairwise(cA, cB, max_distance)
         )
+
+    def load_array(self, data):
+        for coder, item, label in data:
+            self.I.add(item)
+            self.K.add(coder)
+            self.C.add(label)
+            found = False
+            for entry in self.data:
+                if entry["coder"] == coder and entry["item"] == item:
+                    entry["labels"].add(label)
+                    found = True
+                    break
+            if not found:
+                self.data.append({"coder": coder, "item": item, "labels": {label}})
 
 
 if __name__ == "__main__":
