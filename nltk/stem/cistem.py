@@ -166,44 +166,140 @@ class Cistem(StemmerI):
         :return: A tuple of the stemmed word and the removed suffix.
         :rtype: Tuple[str, str]
         """
-
         rest_length = 0
         word_copy = word[:]
 
-        # Pre-processing before applying the substitution patterns
         word = Cistem.replace_to(word)
         rest = ""
 
-        # Apply the substitution patterns
+        def apply_regex(pattern, word, rest_increment):
+            new_word, n = pattern.subn("", word)
+            return (new_word, rest_increment * n, n)
+
         while len(word) > 3:
             if len(word) > 5:
-                word, n = Cistem.strip_emr.subn("", word)
-                if n != 0:
-                    rest_length += 2
+                word, increment, n = apply_regex(Cistem.strip_emr, word, 2)
+                if n:
+                    rest_length += increment
                     continue
 
-                word, n = Cistem.strip_nd.subn("", word)
-                if n != 0:
-                    rest_length += 2
+                word, increment, n = apply_regex(Cistem.strip_nd, word, 2)
+                if n:
+                    rest_length += increment
                     continue
 
             if not upper or self._case_insensitive:
-                word, n = Cistem.strip_t.subn("", word)
-                if n != 0:
-                    rest_length += 1
+                word, increment, n = apply_regex(Cistem.strip_t, word, 1)
+                if n:
+                    rest_length += increment
                     continue
 
-            word, n = Cistem.strip_esn.subn("", word)
-            if n != 0:
-                rest_length += 1
+            word, increment, n = apply_regex(Cistem.strip_esn, word, 1)
+            if n:
+                rest_length += increment
                 continue
             else:
                 break
 
-        # Post-processing after applying the substitution patterns
         word = Cistem.replace_back(word)
 
         if rest_length:
             rest = word_copy[-rest_length:]
 
         return (word, rest)
+
+    @staticmethod
+    def replace_to(word: str) -> str:
+        replacements = {"sch": "$", "ei": "%", "ie": "&"}
+        for k, v in replacements.items():
+            word = word.replace(k, v)
+        return Cistem.repl_xx.sub(r"\1*", word)
+
+    @staticmethod
+    def replace_back(word: str) -> str:
+        word = Cistem.repl_xx_back.sub(r"\1\1", word)
+        replacements = {"%": "ei", "&": "ie", "$": "sch"}
+        for k, v in replacements.items():
+            word = word.replace(k, v)
+        return word
+
+    def stem(self, word: str) -> str:
+        """Stems the input word.
+
+        :param word: The word that is to be stemmed.
+        :type word: str
+        :return: The stemmed word.
+        :rtype: str
+
+        >>> from nltk.stem.cistem import Cistem
+        >>> stemmer = Cistem()
+        >>> s1 = "Speicherbehältern"
+        >>> stemmer.stem(s1)
+        'speicherbehalt'
+        >>> s2 = "Grenzpostens"
+        >>> stemmer.stem(s2)
+        'grenzpost'
+        >>> s3 = "Ausgefeiltere"
+        >>> stemmer.stem(s3)
+        'ausgefeilt'
+        >>> stemmer = Cistem(True)
+        >>> stemmer.stem(s1)
+        'speicherbehal'
+        >>> stemmer.stem(s2)
+        'grenzpo'
+        >>> stemmer.stem(s3)
+        'ausgefeil'
+        """
+        if not word:
+            return word
+
+        upper = word[0].isupper()
+        word = word.lower()
+
+        umlaut_replacements = {"ü": "u", "ö": "o", "ä": "a", "ß": "ss"}
+        for k, v in umlaut_replacements.items():
+            word = word.replace(k, v)
+
+        word = Cistem.strip_ge.sub(r"\1", word)
+
+        return self._segment_inner(word, upper)[0]
+
+    def segment(self, word: str) -> Tuple[str, str]:
+        """
+        This method works very similarly to stem (:func:'cistem.stem'). The difference is that in
+        addition to returning the stem, it also returns the rest that was removed at
+        the end. To be able to return the stem unchanged so the stem and the rest
+        can be concatenated to form the original word, all subsitutions that altered
+        the stem in any other way than by removing letters at the end were left out.
+
+        :param word: The word that is to be stemmed.
+        :type word: str
+        :return: A tuple of the stemmed word and the removed suffix.
+        :rtype: Tuple[str, str]
+
+        >>> from nltk.stem.cistem import Cistem
+        >>> stemmer = Cistem()
+        >>> s1 = "Speicherbehältern"
+        >>> stemmer.segment(s1)
+        ('speicherbehält', 'ern')
+        >>> s2 = "Grenzpostens"
+        >>> stemmer.segment(s2)
+        ('grenzpost', 'ens')
+        >>> s3 = "Ausgefeiltere"
+        >>> stemmer.segment(s3)
+        ('ausgefeilt', 'ere')
+        >>> stemmer = Cistem(True)
+        >>> stemmer.segment(s1)
+        ('speicherbehäl', 'tern')
+        >>> stemmer.segment(s2)
+        ('grenzpo', 'stens')
+        >>> stemmer.segment(s3)
+        ('ausgefeil', 'tere')
+        """
+        if not word:
+            return ("", "")
+
+        upper = word[0].isupper()
+        word = word.lower()
+
+        return self._segment_inner(word, upper)
