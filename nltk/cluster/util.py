@@ -10,6 +10,8 @@ from abc import abstractmethod
 from math import sqrt
 from sys import stdout
 
+import numpy as np
+
 try:
     import numpy
 except ImportError:
@@ -122,12 +124,25 @@ def euclidean_distance(u, v):
     return sqrt(numpy.dot(diff, diff))
 
 
-def cosine_distance(u, v):
+def cosine_distance(u: np.ndarray, v: np.ndarray) -> float:
+    """Calculate the cosine distance between vectors u and v using optimized norm computation.
+
+    Parameters
+    ----------
+    u : np.ndarray
+        First input vector.
+    v : np.ndarray
+        Second input vector.
+
+    Returns
+    -------
+    float
+        Cosine distance between vectors u and v.
     """
-    Returns 1 minus the cosine of the angle between vectors v and u. This is
-    equal to ``1 - (u.v / |u||v|)``.
-    """
-    return 1 - (numpy.dot(u, v) / (sqrt(numpy.dot(u, u)) * sqrt(numpy.dot(v, v))))
+    dot_product_uv = np.dot(u, v)
+    magnitude_u = np.linalg.norm(u)
+    magnitude_v = np.linalg.norm(v)
+    return 1 - (dot_product_uv / (magnitude_u * magnitude_v))
 
 
 class _DendrogramNode:
