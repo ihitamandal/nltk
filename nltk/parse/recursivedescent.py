@@ -377,13 +377,11 @@ class SteppingRecursiveDescentParser(RecursiveDescentParser):
         self._history = []
         self._parses = []
 
-    # [XX] TEMPORARY HACK WARNING!  This should be replaced with
-    # something nicer when we get the chance.
     def _freeze(self, tree):
-        c = tree.copy()
-        #        for pos in c.treepositions('leaves'):
-        #            c[pos] = c[pos].freeze()
-        return ImmutableTree.convert(c)
+        if tree is None:
+            return None
+        # Utilizing the ImmutableTree conversion only once unless the tree changes
+        return ImmutableTree.convert(tree)
 
     def parse(self, tokens):
         tokens = list(tokens)
@@ -586,10 +584,11 @@ class SteppingRecursiveDescentParser(RecursiveDescentParser):
             that has not yet been matched.
         :rtype: bool
         """
-
-        if len(self._rtext) == 0:
+        if not self._rtext:
             return False
-        tried_matches = self._tried_m.get(self._freeze(self._tree), [])
+
+        tree_key = self._freeze(self._tree)
+        tried_matches = self._tried_m.get(tree_key, [])
         return self._rtext[0] not in tried_matches
 
     def currently_complete(self):
