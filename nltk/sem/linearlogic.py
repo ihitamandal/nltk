@@ -65,10 +65,47 @@ class LinearLogicParser(LogicParser):
         return expression
 
     def make_VariableExpression(self, name):
-        if name[0].isupper():
-            return VariableExpression(name)
+        return (
+            VariableExpression(name) if name[0].isupper() else ConstantExpression(name)
+        )
+
+    def unify(self, other, bindings):
+        """
+        'self' must not be bound to anything other than 'other'.
+
+        :param other: ``Expression``
+        :param bindings: ``BindingDict`` A dictionary of all current bindings
+        :return: ``BindingDict`` A new combined dictionary of 'bindings' and the new binding
+        :raise UnificationException: If 'self' and 'other' cannot be unified in the context of 'bindings'
+        """
+        assert isinstance(other, Expression)
+        if self == other:
+            return bindings
         else:
-            return ConstantExpression(name)
+            try:
+                return bindings + BindingDict([(self, other)])
+            except VariableBindingException as e:
+                raise UnificationException(self, other, bindings) from e
+
+    def unify(self, other, bindings):
+        """
+        If 'other' is a constant, then it must be equal to 'self'.  If 'other' is a variable,
+        then it must not be bound to anything other than 'self'.
+
+        :param other: ``Expression``
+        :param bindings: ``BindingDict`` A dictionary of all current bindings
+        :return: ``BindingDict`` A new combined dictionary of 'bindings' and any new binding
+        :raise UnificationException: If 'self' and 'other' cannot be unified in the context of 'bindings'
+        """
+        assert isinstance(other, Expression)
+        if isinstance(other, VariableExpression):
+            try:
+                return bindings + BindingDict([(other, self)])
+            except VariableBindingException:
+                raise UnificationException(self, other, bindings)
+        elif self == other:
+            return bindings
+        raise UnificationException(self, other, bindings)
 
 
 class Expression:
