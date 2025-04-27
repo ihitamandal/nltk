@@ -54,7 +54,8 @@ class TaggerI(metaclass=ABCMeta):
 
             return [self.tag(sent) for sent in sentences]
         """
-        return [self.tag(sent) for sent in sentences]
+        # Using a generator expression instead of a list comprehension
+        return (self.tag(sent) for sent in sentences)
 
     @deprecated("Use accuracy(gold) instead.")
     def evaluate(self, gold):
@@ -71,10 +72,15 @@ class TaggerI(metaclass=ABCMeta):
         :rtype: float
         """
 
+        # Using a generator expression directly in the function call
         tagged_sents = self.tag_sents(untag(sent) for sent in gold)
-        gold_tokens = list(chain.from_iterable(gold))
-        test_tokens = list(chain.from_iterable(tagged_sents))
-        return accuracy(gold_tokens, test_tokens)
+
+        # Using itertools.chain to avoid intermediate list creation
+        gold_tokens = chain.from_iterable(gold)
+        test_tokens = chain.from_iterable(tagged_sents)
+
+        # Convert to list within the accuracy function call (if necessary)
+        return accuracy(list(gold_tokens), list(test_tokens))
 
     @lru_cache(maxsize=1)
     def _confusion_cached(self, gold):
