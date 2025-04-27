@@ -64,6 +64,7 @@ from urllib.parse import unquote_plus
 
 from nltk.corpus import wordnet as wn
 from nltk.corpus.reader.wordnet import Lemma, Synset
+from nltk.corpus.reader import WordNetCorpusReader
 
 firstClient = True
 
@@ -276,15 +277,9 @@ WordNet Browser Utilities.
 This provides a backend to both wxbrowse and browserver.py.
 """
 
-################################################################################
-#
-# Main logic for wordnet browser.
-#
 
-
-# This is wrapped inside a function since wn is only available if the
-# WordNet corpus is installed.
 def _pos_tuples():
+    wn = WordNetCorpusReader
     return [
         (wn.NOUN, "N", "noun"),
         (wn.VERB, "V", "verb"),
