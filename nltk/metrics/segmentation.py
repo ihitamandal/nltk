@@ -48,10 +48,7 @@ except ImportError:
 
 def windowdiff(seg1, seg2, k, boundary="1", weighted=False):
     """
-    Compute the windowdiff score for a pair of segmentations.  A
-    segmentation is any sequence over a vocabulary of two items
-    (e.g. "0", "1"), where the specified boundary value is used to
-    mark the edge of a segmentation.
+    Compute the windowdiff score for a pair of segmentations.
 
         >>> s1 = "000100000010"
         >>> s2 = "000010000100"
@@ -82,14 +79,43 @@ def windowdiff(seg1, seg2, k, boundary="1", weighted=False):
         raise ValueError(
             "Window width k should be smaller or equal than segmentation lengths"
         )
+
+    counts1 = [0] * (len(seg1) - k + 1)
+    counts2 = [0] * (len(seg2) - k + 1)
+    seg1_count = 0
+    seg2_count = 0
+
+    # Populate counts arrays with boundary counts
+    for i in range(k):
+        if seg1[i] == boundary:
+            seg1_count += 1
+        if seg2[i] == boundary:
+            seg2_count += 1
+    counts1[0] = seg1_count
+    counts2[0] = seg2_count
+
+    for i in range(1, len(seg1) - k + 1):
+        if seg1[i - 1] == boundary:
+            seg1_count -= 1
+        if seg1[i + k - 1] == boundary:
+            seg1_count += 1
+        counts1[i] = seg1_count
+
+        if seg2[i - 1] == boundary:
+            seg2_count -= 1
+        if seg2[i + k - 1] == boundary:
+            seg2_count += 1
+        counts2[i] = seg2_count
+
+    # Compute windowdiff
     wd = 0
-    for i in range(len(seg1) - k + 1):
-        ndiff = abs(seg1[i : i + k].count(boundary) - seg2[i : i + k].count(boundary))
+    for i in range(len(counts1)):
+        ndiff = abs(counts1[i] - counts2[i])
         if weighted:
             wd += ndiff
         else:
             wd += min(1, ndiff)
-    return wd / (len(seg1) - k + 1.0)
+    return wd / len(counts1)
 
 
 # Generalized Hamming Distance
