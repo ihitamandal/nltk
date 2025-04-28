@@ -152,19 +152,37 @@ class CutoffChecker:
             return False  # no cutoff reached.
 
 
-######################################################################
-# { Demos
-######################################################################
+def names_demo_features(name: str) -> dict[str, object]:
+    """Generate a dictionary of features based on the input name.
 
+    Parameters
+    ----------
+    name : str
+        The input name string.
 
-def names_demo_features(name):
-    features = {}
-    features["alwayson"] = True
-    features["startswith"] = name[0].lower()
-    features["endswith"] = name[-1].lower()
-    for letter in "abcdefghijklmnopqrstuvwxyz":
-        features["count(%s)" % letter] = name.lower().count(letter)
-        features["has(%s)" % letter] = letter in name.lower()
+    Returns
+    -------
+    dict[str, object]
+        A dictionary containing various features derived from the name.
+    """
+    lowercase_name = name.lower()
+    alphabet = "abcdefghijklmnopqrstuvwxyz"
+    name_set = set(lowercase_name)
+
+    count_dict = {
+        f"count({letter})": lowercase_name.count(letter) for letter in alphabet
+    }
+    has_dict = {f"has({letter})": (letter in name_set) for letter in alphabet}
+
+    features = {
+        "alwayson": True,
+        "startswith": lowercase_name[0],
+        "endswith": lowercase_name[-1],
+    }
+
+    features.update(count_dict)
+    features.update(has_dict)
+
     return features
 
 
