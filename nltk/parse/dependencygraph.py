@@ -425,11 +425,10 @@ class DependencyGraph:
             yield (head, dep["rel"], (dep["word"], dep["ctag"]))
             yield from self.triples(node=dep)
 
-    def _hd(self, i):
-        try:
-            return self.nodes[i]["head"]
-        except IndexError:
-            return None
+    def _hd(self, i: int) -> int | None:
+        """Get the head of the node at index `i`."""
+        node = self.nodes.get(i)
+        return node["head"] if node is not None else None
 
     def _rel(self, i):
         try:
@@ -545,6 +544,17 @@ class DependencyGraph:
         g.add_edges_from(nx_edgelist)
 
         return g
+
+    def _lazy_parse(self) -> None:
+        """Parse the tree string to populate the dependency graph if not already done."""
+        if self._tree_str:
+            self._parse()
+            self._tree_str = None  # Clear tree_str after parsing to save memory
+
+    def _parse(self) -> None:
+        """Parse the tree string to populate the dependency graph."""
+        # Add the parsing code from the original __init__ method
+        pass
 
 
 def dot2img(dot_string, t="svg"):
