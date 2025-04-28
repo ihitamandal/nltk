@@ -347,7 +347,8 @@ class BoxerOutputDrsParser(DrtParser):
     def parse(self, data, signature=None):
         return DrtParser.parse(self, data, signature)
 
-    def get_all_symbols(self):
+    @staticmethod
+    def get_all_symbols():
         return ["(", ")", ",", "[", "]", ":"]
 
     def handle(self, tok, context):
