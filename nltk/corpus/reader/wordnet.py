@@ -459,10 +459,7 @@ class Synset(_WordNetObject):
             corpus._load_lang_data(lang)
             of = corpus.ss2of(self)
             i = corpus.lg_attrs.index(doc_type)
-            if of in corpus._lang_data[lang][i]:
-                return corpus._lang_data[lang][i][of]
-            else:
-                return None
+            return corpus._lang_data[lang][i].get(of)
 
     def definition(self, lang="eng"):
         """Return definition in specified language"""
@@ -1104,6 +1101,15 @@ class Synset(_WordNetObject):
             r.sort()
         return r
 
+    def _load_lexnames(self):
+        """Load lexnames into the list"""
+        with self.open("lexnames") as fp:
+            self._lexnames.extend(
+                line.split()[1]
+                for i, line in enumerate(fp)
+                if int(line.split()[0]) == i
+            )
+
 
 ######################################################################
 # WordNet Corpus Reader
@@ -1307,14 +1313,11 @@ class WordNetCorpusReader(CorpusReader):
         return self.synset_from_pos_and_offset(of[-1], int(of[:8]))
 
     def ss2of(self, ss):
-        """return the ID of the synset"""
-        if ss:
-            return f"{ss.offset():08d}-{ss.pos()}"
+        """Return the ID of the synset"""
+        return f"{ss.offset():08d}-{ss.pos()}" if ss else None
 
     def _load_lang_data(self, lang):
-        """load the wordnet data of the requested language from the file to
-        the cache, _lang_data"""
-
+        """Load the wordnet data of the requested language from the file to the cache, _lang_data"""
         if lang in self._lang_data:
             return
 
@@ -1324,16 +1327,13 @@ class WordNetCorpusReader(CorpusReader):
         if lang not in self.langs():
             raise WordNetError("Language is not supported.")
 
-        if self._exomw_reader and lang not in self.omw_langs:
-            reader = self._exomw_reader
-        else:
-            reader = self._omw_reader
-
+        reader = (
+            self._exomw_reader
+            if self._exomw_reader and lang not in self.omw_langs
+            else self._omw_reader
+        )
         prov = self.provenances[lang]
-        if prov in ["cldr", "wikt"]:
-            prov2 = prov
-        else:
-            prov2 = "data"
+        prov2 = prov if prov in ["cldr", "wikt"] else "data"
 
         with reader.open(f"{prov}/wn-{prov2}-{lang.split('_')[0]}.tab") as fp:
             self.custom_lemmas(fp, lang)
@@ -1374,7 +1374,7 @@ class WordNetCorpusReader(CorpusReader):
         self.add_provs(self._exomw_reader)
 
     def langs(self):
-        """return a list of languages supported by Multilingual Wordnet"""
+        """Return a list of languages supported by Multilingual Wordnet"""
         return list(self.provenances.keys())
 
     def _load_lemma_pos_offset_map(self):
