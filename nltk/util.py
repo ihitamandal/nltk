@@ -572,22 +572,22 @@ def unweighted_minimum_spanning_dict(tree, children=iter):
      Synset('unfree.a.02'): [Synset('confined.a.02'),
                              Synset('dependent.a.01'),
                              Synset('restricted.a.01')]}
-
     """
-    traversed = set()  # Empty set of traversed nodes
-    queue = deque([tree])  # Initialize queue
-    agenda = {tree}  # Set of all nodes ever queued
-    mstdic = {}  # Empty MST dictionary
+
+    mstdic = {tree: []}
+    queue = deque([tree])
+    visited = set([tree])
+
     while queue:
-        node = queue.popleft()  # Node is not yet in the MST dictionary,
-        mstdic[node] = []  # so add it with an empty list of children
-        if node not in traversed:  # Avoid cycles
-            traversed.add(node)
-            for child in children(node):
-                if child not in agenda:  # Queue nodes only once
-                    mstdic[node].append(child)  # Add child to the MST
-                    queue.append(child)  # Add child to queue
-                    agenda.add(child)
+        node = queue.popleft()
+
+        for child in children(node):
+            if child not in visited:
+                visited.add(child)
+                mstdic[node].append(child)
+                mstdic[child] = []
+                queue.append(child)
+
     return mstdic
 
 
