@@ -169,15 +169,25 @@ def names_demo_features(name):
 
 
 def binary_names_demo_features(name):
-    features = {}
-    features["alwayson"] = True
-    features["startswith(vowel)"] = name[0].lower() in "aeiouy"
-    features["endswith(vowel)"] = name[-1].lower() in "aeiouy"
-    for letter in "abcdefghijklmnopqrstuvwxyz":
-        features["count(%s)" % letter] = name.lower().count(letter)
-        features["has(%s)" % letter] = letter in name.lower()
-        features["startswith(%s)" % letter] = letter == name[0].lower()
-        features["endswith(%s)" % letter] = letter == name[-1].lower()
+    lowered_name = name.lower()
+    first_letter = lowered_name[0]
+    last_letter = lowered_name[-1]
+
+    features = {
+        "alwayson": True,
+        "startswith(vowel)": first_letter in "aeiouy",
+        "endswith(vowel)": last_letter in "aeiouy",
+    }
+
+    alphabet = "abcdefghijklmnopqrstuvwxyz"
+
+    for letter in alphabet:
+        count = lowered_name.count(letter)
+        features[f"count({letter})"] = count
+        features[f"has({letter})"] = count > 0
+        features[f"startswith({letter})"] = first_letter == letter
+        features[f"endswith({letter})"] = last_letter == letter
+
     return features
 
 
