@@ -70,7 +70,7 @@ Expected results from the Artstein and Poesio survey paper:
 """
 
 import logging
-from itertools import groupby
+from itertools import combinations, groupby
 from operator import itemgetter
 
 from nltk.internals import deprecated
@@ -198,14 +198,10 @@ class AnnotationTask:
         """
         total = 0
         n = 0
-        s = self.C.copy()
-        for cA in self.C:
-            s.remove(cA)
-            for cB in s:
-                total += function(cA, cB)
-                n += 1
-        ret = total / n
-        return ret
+        for cA, cB in combinations(self.C, 2):
+            total += function(cA, cB)
+            n += 1
+        return total / n
 
     def avg_Ao(self):
         """Average observed agreement across all coders and items."""
