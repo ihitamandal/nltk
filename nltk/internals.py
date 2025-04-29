@@ -312,17 +312,12 @@ def read_number(s, start_position):
         return int(m.group()), m.end()
 
 
-######################################################################
-# Check if a method has been overridden
-######################################################################
-
-
 def overridden(method):
     """
     :return: True if ``method`` overrides some method with the same
-        name in a base class.  This is typically used when defining
+        name in a base class. This is typically used when defining
         abstract base classes or interfaces, to allow subclasses to define
-        either of two related methods:
+        either of two related methods.
 
         >>> class EaterI:
         ...     '''Subclass must define eat() or batch_eat().'''
@@ -336,14 +331,12 @@ def overridden(method):
 
     :type method: instance method
     """
-    if isinstance(method, types.MethodType) and method.__self__.__class__ is not None:
+    if (
+        isinstance(method, types.MethodType)
+        and (cls := method.__self__.__class__) is not None
+    ):
         name = method.__name__
-        funcs = [
-            cls.__dict__[name]
-            for cls in _mro(method.__self__.__class__)
-            if name in cls.__dict__
-        ]
-        return len(funcs) > 1
+        return any(name in base.__dict__ for base in cls.__mro__[1:])
     else:
         raise TypeError("Expected an instance method.")
 
