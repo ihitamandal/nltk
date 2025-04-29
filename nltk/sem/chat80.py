@@ -331,11 +331,7 @@ class Concept:
         """
         Convert an adjacency linked list back into a set of pairs.
         """
-        pairs = []
-        for node in g:
-            for adjacent in g[node]:
-                pairs.append((node, adjacent))
-        return set(pairs)
+        return {(node, adjacent) for node in g for adjacent in g[node]}
 
     def close(self):
         """
