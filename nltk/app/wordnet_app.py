@@ -721,11 +721,11 @@ class Reference:
         """
         Toggle displaying of the relation types for the given synset
         """
-        if synset.name() in self.synset_relations:
-            del self.synset_relations[synset.name()]
+        synset_name = synset.name()
+        if synset_name in self.synset_relations:
+            del self.synset_relations[synset_name]
         else:
-            self.synset_relations[synset.name()] = set()
-
+            self.synset_relations[synset_name] = set()
         return self
 
 
