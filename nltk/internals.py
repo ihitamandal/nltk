@@ -312,15 +312,10 @@ def read_number(s, start_position):
         return int(m.group()), m.end()
 
 
-######################################################################
-# Check if a method has been overridden
-######################################################################
-
-
 def overridden(method):
     """
     :return: True if ``method`` overrides some method with the same
-        name in a base class.  This is typically used when defining
+        name in a base class. This is typically used when defining
         abstract base classes or interfaces, to allow subclasses to define
         either of two related methods:
 
@@ -336,16 +331,18 @@ def overridden(method):
 
     :type method: instance method
     """
-    if isinstance(method, types.MethodType) and method.__self__.__class__ is not None:
-        name = method.__name__
-        funcs = [
-            cls.__dict__[name]
-            for cls in _mro(method.__self__.__class__)
-            if name in cls.__dict__
-        ]
-        return len(funcs) > 1
-    else:
+    if not isinstance(method, types.MethodType):
         raise TypeError("Expected an instance method.")
+
+    method_self_class = method.__self__.__class__
+    if method_self_class is None:
+        raise TypeError("Expected a method bound to a class instance.")
+
+    method_name = method.__name__
+    for cls in method_self_class.__mro__:
+        if method_name in cls.__dict__:
+            # Check if the method is from the base class, skip the first match which is the method itself
+            return cls is not method_self_class
 
 
 def _mro(cls):
