@@ -138,15 +138,11 @@ class _DendrogramNode:
         self._children = children
 
     def leaves(self, values=True):
-        if self._children:
-            leaves = []
-            for child in self._children:
-                leaves.extend(child.leaves(values))
-            return leaves
-        elif values:
-            return [self._value]
-        else:
-            return [self]
+        if not self._children:
+            return [self._value] if values else [self]
+
+        # Using list comprehension for faster execution
+        return [leaf for child in self._children for leaf in child.leaves(values)]
 
     def groups(self, n):
         queue = [(self._value, self)]
