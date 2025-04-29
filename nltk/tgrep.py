@@ -112,6 +112,8 @@ macro definitions to ``m`` and initialises ``l`` to an empty dictionary.
 import functools
 import re
 
+from nltk.tree import Tree
+
 try:
     import pyparsing
 except ImportError:
@@ -200,7 +202,7 @@ def _rightmost_descendants(node):
 
 def _istree(obj):
     """Predicate to check whether `obj` is a nltk.tree.Tree."""
-    return isinstance(obj, nltk.tree.Tree)
+    return isinstance(obj, Tree)
 
 
 def _unique_descendants(node):
@@ -210,9 +212,17 @@ def _unique_descendants(node):
     """
     results = []
     current = node
-    while current and _istree(current) and len(current) == 1:
+
+    # Check once if the current node is a Tree.
+    if not _istree(current):
+        return results
+
+    while len(current) == 1:
         current = current[0]
         results.append(current)
+        if not _istree(current):
+            break
+
     return results
 
 
